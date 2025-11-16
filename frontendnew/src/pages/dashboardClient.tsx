@@ -3,7 +3,7 @@ import ButtonTicket from "../components/buttonTicket";
 import { Link } from "react-router-dom";
 import { TicketStatusColors } from "../config/ticketStatusColor";
 
-const AccueilClient1 = () => {
+const DashboardClient = () => {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
 
@@ -11,7 +11,7 @@ const AccueilClient1 = () => {
       <section className="bg-gradient-to-br from-blue-900 to-blue-700 text-white py-14 px-6 shadow-lg">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center md:justify-between">
           <div className="space-y-5 md:w-1/2">
-            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight drop-shadow">
+            <h1 className="text-4xl md:text-5xl font-bold leading-tight drop-shadow">
               Bienvenue sur votre espace client
             </h1>
             <p className="text-lg text-gray-200 leading-relaxed">
@@ -152,4 +152,4 @@ function SectionList({
   );
 }
 
-export default AccueilClient1;
+export default DashboardClient;

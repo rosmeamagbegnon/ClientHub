@@ -8,7 +8,7 @@ const NavbarClient = () => {
   const location = useLocation(); // détecte la route active
 
   const navLinks = [
-    { path: "/accueilclient1", label: "Accueil" },
+    { path: "/dashboardclient", label: "Accueil" },
     { path: "/ticketsclient", label: "Mes Demandes" },
     { path: "/commandesclient", label: "Mes Commandes" },
     { path: "/bonusclient", label: "Mes Bonus" },

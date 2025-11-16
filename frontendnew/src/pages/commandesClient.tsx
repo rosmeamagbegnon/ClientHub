@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, CreditCard } from "lucide-react";
@@ -25,19 +25,14 @@ const statusColors: Record<Commande["status"], string> = {
 };
 
 export default function CommandesClient() {
-  const [commandes, setCommandes] = useState<Commande[]>([]);
+  const [commandes] = useState<Commande[]>([
+    { id: 1, reference: "CMD-001", date: "2025-11-01", status: "en cours d'étude", total: 120.5 },
+    { id: 2, reference: "CMD-002", date: "2025-11-05", status: "contrat accepté", total: 75.0 },
+    { id: 3, reference: "CMD-003", date: "2025-11-08", status: "en cours de développement", total: 200.0 },
+    { id: 4, reference: "CMD-004", date: "2025-11-10", status: "livraison", total: 150.0 },
+  ]);
   const [search, setSearch] = useState<string>("");
   const [filter, setFilter] = useState<Commande["status"] | "all">("all");
-
-  useEffect(() => {
-    // Mock data
-    setCommandes([
-      { id: 1, reference: "CMD-001", date: "2025-11-01", status: "en cours d'étude", total: 120.5 },
-      { id: 2, reference: "CMD-002", date: "2025-11-05", status: "contrat accepté", total: 75.0 },
-      { id: 3, reference: "CMD-003", date: "2025-11-08", status: "en cours de développement", total: 200.0 },
-      { id: 4, reference: "CMD-004", date: "2025-11-10", status: "livraison", total: 150.0 },
-    ]);
-  }, []);
 
   const filteredCommandes = commandes.filter((c) => {
     const matchSearch = c.reference.toLowerCase().includes(search.toLowerCase());
