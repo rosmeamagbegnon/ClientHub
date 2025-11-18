@@ -16,7 +16,7 @@ import {
 import { ApiError } from "../utils/responseFormatter.js";
 
 /**
- * 🎫 TICKET SERVICE - Business Logic Layer
+ * TICKET SERVICE - Business Logic Layer
  *
  * Gère toutes les validations et la logique métier pour les tickets.
  * Utilise le Model pour accéder à la BD.

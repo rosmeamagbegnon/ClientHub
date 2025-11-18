@@ -17,7 +17,7 @@ import {
 import { ApiError } from "../utils/responseFormatter.js";
 
 /**
- * 🛒 COMMANDE SERVICE - Business Logic Layer
+ * COMMANDE SERVICE - Business Logic Layer
  *
  * Gère toutes les validations et la logique métier pour les commandes.
  * Utilise le Model pour accéder à la BD.

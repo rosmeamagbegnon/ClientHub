@@ -31,6 +31,7 @@ import clientAuthRoutes from "./routes/clientAuthRoutes.js";
 import entrepriseAuthRoutes from "./routes/entrepriseAuthRoutes.js";
 import ticketRoutes from "./routes/ticketRoutes.js";
 import commandeRoutes from "./routes/commandeRoutes.js";
+import bonusRoutes from "./routes/bonusRoutes.js";
 
 dotenv.config();
 
@@ -135,6 +136,9 @@ app.use("/api/tickets", ticketRoutes);
 
 // Routes de commandes
 app.use("/api/commandes", commandeRoutes);
+
+// Routes de bonus
+app.use("/api/bonus", bonusRoutes);
 
 /**
  * ===== GESTION ERREURS =====

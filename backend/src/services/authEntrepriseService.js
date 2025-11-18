@@ -4,7 +4,7 @@ import { validateEmail } from "../middleware/validationMiddleware.js";
 import { ApiError } from "../utils/responseFormatter.js";
 
 /**
- * 🎯 ENTREPRISE AUTHENTICATION SERVICE - Business Logic Layer
+ * ENTREPRISE AUTHENTICATION SERVICE - Business Logic Layer
  *
  * Gère la logique métier pour l'authentification des entreprises CRM.
  * Valide les données, vérifie les règles métier, coordonne le model et les utils.

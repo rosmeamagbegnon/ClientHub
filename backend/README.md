@@ -112,10 +112,10 @@ Chaque mesure est documentée dans le code.
 
 - ✅ **Setup initial** - Structure et configuration (100%)
 - ✅ **Authentification Clients** - Complète (100%)
-- 🔄 **Authentification Entreprises** - À commencer
-- ⏳ **Gestion des Tickets** - À commencer
-- ⏳ **Gestion des Commandes** - À commencer
-- ⏳ **Gestion des Bonus** - À commencer
+- 🔄 **Authentification Entreprises** - Complète (100%)
+- ⏳ **Gestion des Tickets** - Complète (100%)
+- ⏳ **Gestion des Commandes** - Complète (100%)
+- ⏳ **Gestion des Bonus** - Complète (100%)
 - ⏳ **Chatbot** - À commencer
 - ⏳ **Dashboard Entreprise** - À commencer
 
