@@ -70,6 +70,22 @@ async function initializeSchema() {
   });
 
   try {
+    // Drop les tables existantes pour éviter les conflits
+    console.log("🧹 Nettoyage des tables existantes...");
+    await pool.query(`
+      DROP TABLE IF EXISTS messages_chatbot CASCADE;
+      DROP TABLE IF EXISTS sessions_chatbot CASCADE;
+      DROP TABLE IF EXISTS notes_commandes CASCADE;
+      DROP TABLE IF EXISTS commandes CASCADE;
+      DROP TABLE IF EXISTS notes_tickets CASCADE;
+      DROP TABLE IF EXISTS tickets CASCADE;
+      DROP TABLE IF EXISTS bonus CASCADE;
+      DROP TABLE IF EXISTS audit_log CASCADE;
+      DROP TABLE IF EXISTS entreprises CASCADE;
+      DROP TABLE IF EXISTS clients CASCADE;
+    `);
+    console.log("✅ Tables nettoyées");
+
     // Lit le fichier schema.sql
     const schemaPath = path.join(
       __dirname,

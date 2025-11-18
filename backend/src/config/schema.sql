@@ -58,9 +58,9 @@ CREATE TABLE IF NOT EXISTS clients (
   CONSTRAINT valid_type CHECK (type_client IN ('particulier', 'entreprise'))
 );
 
-CREATE INDEX idx_clients_email ON clients(email);
-CREATE INDEX idx_clients_type ON clients(type_client);
-CREATE INDEX idx_clients_actif ON clients(est_actif);
+CREATE INDEX IF NOT EXISTS idx_clients_email ON clients(email);
+CREATE INDEX IF NOT EXISTS idx_clients_type ON clients(type_client);
+CREATE INDEX IF NOT EXISTS idx_clients_actif ON clients(est_actif);
 
 
 -- ====================================
@@ -75,20 +75,20 @@ CREATE TABLE IF NOT EXISTS entreprises (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- Infos entreprise
-  nom VARCHAR(255) NOT NULL,
+  nom_entreprise VARCHAR(255) NOT NULL UNIQUE,
   secteur_activite VARCHAR(100) NOT NULL,
   taille_entreprise VARCHAR(50) NOT NULL,
-  numero_rccm VARCHAR(50) NOT NULL UNIQUE,
+  numero_rccm_ifu VARCHAR(50) NOT NULL UNIQUE,
   
-  -- Contacts
-  contact_principal VARCHAR(100) NOT NULL,
-  email_principal VARCHAR(255) NOT NULL UNIQUE,
-  telephone_principal VARCHAR(20),
+  -- Contacts entreprise
+  email_entreprise VARCHAR(255) NOT NULL UNIQUE,
+  telephone_entreprise VARCHAR(20),
+  whatsapp_entreprise VARCHAR(20),
+  adresse_professionnelle TEXT,
   
   -- Infos additionnelles
   site_internet VARCHAR(255),
   linkedin VARCHAR(255),
-  adresse_siege TEXT,
   
   -- Responsable (celui qui a créé le compte)
   prenom_responsable VARCHAR(100) NOT NULL,
@@ -97,17 +97,14 @@ CREATE TABLE IF NOT EXISTS entreprises (
   mot_de_passe_hash VARCHAR(255) NOT NULL,
   
   -- État
-  est_actif BOOLEAN DEFAULT true,
-  date_inscription TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  dernier_login TIMESTAMP,
-  
-  -- Abonnement (bonus)
-  plan_abonnement VARCHAR(50) DEFAULT 'standard', -- 'free', 'starter', 'pro'
-  date_fin_abonnement TIMESTAMP
+  est_active BOOLEAN DEFAULT true,
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  date_modification TIMESTAMP,
+  dernier_login TIMESTAMP
 );
 
-CREATE INDEX idx_entreprises_email ON entreprises(email_principal);
-CREATE INDEX idx_entreprises_rccm ON entreprises(numero_rccm);
+CREATE INDEX IF NOT EXISTS idx_entreprises_email ON entreprises(email_entreprise);
+CREATE INDEX IF NOT EXISTS idx_entreprises_rccm ON entreprises(numero_rccm_ifu);
 
 
 -- ====================================
@@ -161,10 +158,10 @@ CREATE TABLE IF NOT EXISTS tickets (
   CONSTRAINT valid_priorite CHECK (priorite IN ('basse', 'normal', 'haute', 'urgente'))
 );
 
-CREATE INDEX idx_tickets_client ON tickets(client_id);
-CREATE INDEX idx_tickets_entreprise ON tickets(entreprise_id);
-CREATE INDEX idx_tickets_statut ON tickets(statut);
-CREATE INDEX idx_tickets_date ON tickets(date_creation);
+CREATE INDEX IF NOT EXISTS idx_tickets_client ON tickets(client_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_entreprise ON tickets(entreprise_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_statut ON tickets(statut);
+CREATE INDEX IF NOT EXISTS idx_tickets_date ON tickets(date_creation);
 
 
 -- ====================================
@@ -188,7 +185,7 @@ CREATE TABLE IF NOT EXISTS notes_tickets (
   date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_notes_tickets_ticket ON notes_tickets(ticket_id);
+CREATE INDEX IF NOT EXISTS idx_notes_tickets_ticket ON notes_tickets(ticket_id);
 
 
 -- ====================================
@@ -240,9 +237,9 @@ CREATE TABLE IF NOT EXISTS commandes (
   CONSTRAINT valid_statut CHECK (statut IN ('en_attente', 'contrat_accepte', 'en_cours_developpement', 'livraison', 'livree', 'annulee'))
 );
 
-CREATE INDEX idx_commandes_client ON commandes(client_id);
-CREATE INDEX idx_commandes_entreprise ON commandes(entreprise_id);
-CREATE INDEX idx_commandes_statut ON commandes(statut);
+CREATE INDEX IF NOT EXISTS idx_commandes_client ON commandes(client_id);
+CREATE INDEX IF NOT EXISTS idx_commandes_entreprise ON commandes(entreprise_id);
+CREATE INDEX IF NOT EXISTS idx_commandes_statut ON commandes(statut);
 
 
 -- ====================================
@@ -266,7 +263,7 @@ CREATE TABLE IF NOT EXISTS notes_commandes (
   date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_notes_commandes_commande ON notes_commandes(commande_id);
+CREATE INDEX IF NOT EXISTS idx_notes_commandes_commande ON notes_commandes(commande_id);
 
 
 -- ====================================
@@ -306,8 +303,8 @@ CREATE TABLE IF NOT EXISTS bonus (
   date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_bonus_entreprise ON bonus(entreprise_id);
-CREATE INDEX idx_bonus_client ON bonus(client_id);
+CREATE INDEX IF NOT EXISTS idx_bonus_entreprise ON bonus(entreprise_id);
+CREATE INDEX IF NOT EXISTS idx_bonus_client ON bonus(client_id);
 
 
 -- ====================================
@@ -345,7 +342,7 @@ CREATE TABLE IF NOT EXISTS messages_chatbot (
   date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_messages_chatbot_session ON messages_chatbot(session_id);
+CREATE INDEX IF NOT EXISTS idx_messages_chatbot_session ON messages_chatbot(session_id);
 
 
 -- ====================================
@@ -374,8 +371,8 @@ CREATE TABLE IF NOT EXISTS audit_log (
   date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_audit_log_utilisateur ON audit_log(utilisateur_id);
-CREATE INDEX idx_audit_log_date ON audit_log(date_creation);
+CREATE INDEX IF NOT EXISTS idx_audit_log_utilisateur ON audit_log(utilisateur_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_date ON audit_log(date_creation);
 
 
 -- ====================================

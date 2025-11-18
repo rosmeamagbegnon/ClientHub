@@ -28,6 +28,9 @@ import {
 
 // Import routes
 import clientAuthRoutes from "./routes/clientAuthRoutes.js";
+import entrepriseAuthRoutes from "./routes/entrepriseAuthRoutes.js";
+import ticketRoutes from "./routes/ticketRoutes.js";
+import commandeRoutes from "./routes/commandeRoutes.js";
 
 dotenv.config();
 
@@ -124,11 +127,14 @@ app.get("/health", (req, res) => {
 // Routes d'authentification clients
 app.use("/api/auth/clients", clientAuthRoutes);
 
-// Routes de tickets (à implémenter)
-// app.use('/api/tickets', ticketRoutes);
+// Routes d'authentification entreprises CRM
+app.use("/api/auth/entreprises", entrepriseAuthRoutes);
 
-// Routes de commandes (à implémenter)
-// app.use('/api/orders', orderRoutes);
+// Routes de tickets
+app.use("/api/tickets", ticketRoutes);
+
+// Routes de commandes
+app.use("/api/commandes", commandeRoutes);
 
 /**
  * ===== GESTION ERREURS =====
