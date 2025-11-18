@@ -33,6 +33,7 @@ import ticketRoutes from "./routes/ticketRoutes.js";
 import commandeRoutes from "./routes/commandeRoutes.js";
 import bonusRoutes from "./routes/bonusRoutes.js";
 import chatbotRoutes from "./routes/chatbotRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 dotenv.config();
 
@@ -143,6 +144,9 @@ app.use("/api/bonus", bonusRoutes);
 
 // Routes de chatbot
 app.use("/api/chatbot", chatbotRoutes);
+
+// Routes de dashboard
+app.use("/api/dashboard", dashboardRoutes);
 
 /**
  * ===== GESTION ERREURS =====
