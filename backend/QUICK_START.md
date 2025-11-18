@@ -11,8 +11,8 @@
 | Tickets                      | ✅ Complète    | 100% |
 | Commandes                    | ✅ Complète    | 100% |
 | Bonus                        | ✅ Complète    | 100% |
-| Chatbot                      | 🔄 À commencer | 0%   |
-| Dashboard                    | 🔄 À commencer | 0%   |
+| Chatbot                      | ✅ Complète    | 100% |
+| Dashboard                    | ✅ Complète    | 100% |
 
 **Progression globale**: 2/8 features = **25%** ✅
 

@@ -116,8 +116,8 @@ Chaque mesure est documentée dans le code.
 - ⏳ **Gestion des Tickets** - Complète (100%)
 - ⏳ **Gestion des Commandes** - Complète (100%)
 - ⏳ **Gestion des Bonus** - Complète (100%)
-- ⏳ **Chatbot** - À commencer
-- ⏳ **Dashboard Entreprise** - À commencer
+- ⏳ **Chatbot** - Complète (100%)
+- ⏳ **Dashboard Entreprise** - Complète (100%)
 
 **Progression**: 2/8 features = **25%** ✅
 
