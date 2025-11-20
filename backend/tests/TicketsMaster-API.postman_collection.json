@@ -1,0 +1,114 @@
+{
+  "client": {
+    "name": "TicketsMaster API",
+    "version": "1.0"
+  },
+  "item": [
+    {
+      "name": "Auth Clients",
+      "item": [
+        {
+          "name": "📝 Register - Particulier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/auth/clients/register/particulier",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "auth", "clients", "register", "particulier"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"prenom\":\"Jean\",\"nom\":\"Dupont\",\"email\":\"jean.dupont@test.com\",\"telephone\":\"+22968123456\",\"canal_contact\":\"email\",\"password\":\"SecurePass123!\",\"confirmPassword\":\"SecurePass123!\"}"
+            }
+          }
+        },
+        {
+          "name": "🏢 Register - Entreprise",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/auth/clients/register/entreprise",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "auth", "clients", "register", "entreprise"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"prenom\":\"Alice\",\"nom\":\"Martin\",\"email\":\"alice@techcompany.com\",\"telephone\":\"+22968999999\",\"password\":\"TechSecure123!\",\"confirmPassword\":\"TechSecure123!\",\"nom_entreprise\":\"TechCompany Bénin\",\"secteur_activite\":\"Technologie\",\"taille_entreprise\":\"11 - 50 employés\",\"poste_occupe\":\"Directrice Générale\",\"numero_rccm\":\"BJ-123456-789\",\"adresse_physique\":\"123 Avenue de Cotonou\",\"email_professionnel\":\"contact@techcompany.bj\",\"telephone_entreprise\":\"+22968999998\",\"site_internet\":\"www.techcompany.bj\",\"linkedin\":\"linkedin.com/company/techcompany\"}"
+            }
+          }
+        },
+        {
+          "name": "🔐 Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/auth/clients/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "auth", "clients", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"jean.dupont@test.com\",\"password\":\"SecurePass123!\"}"
+            }
+          }
+        },
+        {
+          "name": "👤 Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR_TOKEN_HERE"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/auth/clients/me",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "auth", "clients", "me"]
+            }
+          }
+        },
+        {
+          "name": "🏥 Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
