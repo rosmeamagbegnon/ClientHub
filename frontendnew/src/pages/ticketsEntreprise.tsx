@@ -129,9 +129,9 @@ const TicketsEntreprise = () => {
           <Card key={ticket.id} className="shadow-md rounded-2xl hover:shadow-xl transition bg-white border border-gray-100">
             <CardContent className="p-5">
               <h2 className="text-xl font-semibold text-blue-800 mb-2 line-clamp-1">{ticket.title}</h2>
-              <p className="text-gray-700 mb-2"><span className="font-semibold">Client:</span> {ticket.client}</p>
-              <p className="text-gray-700 mb-2"><span className="font-semibold">Type:</span> {ticket.type}</p>
-              <p className="text-gray-700 mb-4"> <span className="font-semibold">Statut:</span>
+              <p className="text-gray-700 mb-1"><span className="font-semibold">Client:</span> {ticket.client}</p>
+              <p className="text-gray-700 mb-1"><span className="font-semibold">Type:</span> {ticket.type}</p>
+              <p className="text-gray-700 mb-1"> <span className="font-semibold">Statut:</span>
                 <Badge className={`${TicketStatusColor[ticket.status]}`}>{ticket.status}</Badge>
               </p>
               <p className="text-gray-700 mb-4"> <span className="font-semibold">Échéance :</span>  {ticket.dueDate}</p>

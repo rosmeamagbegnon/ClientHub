@@ -92,7 +92,7 @@ function TicketsByTypePie() {
       <ResponsiveContainer width="100%" height="80%">
         <PieChart>
           <Pie data={ticketsByType} dataKey="value" nameKey="name" outerRadius={70} label>
-            {ticketsByType.map((entry, index) => (
+            {ticketsByType.map((_, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
