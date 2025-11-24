@@ -19,7 +19,7 @@ import pool from "../config/database.js";
  */
 export const getGeneralStats = async (entrepriseId, period = "month") => {
   try {
-    // Définir l'intervalle directement
+    // Définir l'intervalle directement dans la requête SQL
     const intervalMap = {
       day: "1 day",
       week: "1 week",
@@ -28,14 +28,13 @@ export const getGeneralStats = async (entrepriseId, period = "month") => {
     };
 
     const interval = intervalMap[period] || "1 month";
-    const dateFilter = `CURRENT_DATE - INTERVAL '${interval}'`;
 
     const query = `
       WITH stats AS (
         -- Clients totaux et nouveaux
         SELECT 
           COUNT(DISTINCT c.id) as total_clients,
-          COUNT(DISTINCT CASE WHEN c.date_creation >= $2 THEN c.id END) as new_clients,
+          COUNT(DISTINCT CASE WHEN c.date_creation >= CURRENT_DATE - INTERVAL '${interval}' THEN c.id END) as new_clients,
           
           -- Tickets
           COUNT(DISTINCT t.id) as total_tickets,
@@ -50,20 +49,21 @@ export const getGeneralStats = async (entrepriseId, period = "month") => {
           
           -- Revenus
           COALESCE(SUM(CASE WHEN cmd.statut = 'livree' THEN cmd.cout_final ELSE 0 END), 0) as revenus_totaux,
-          COALESCE(SUM(CASE WHEN cmd.date_livraison >= $2 AND cmd.statut = 'livree' THEN cmd.cout_final ELSE 0 END), 0) as revenus_periode
+          COALESCE(SUM(CASE WHEN cmd.date_livraison >= CURRENT_DATE - INTERVAL '${interval}' AND cmd.statut = 'livree' THEN cmd.cout_final ELSE 0 END), 0) as revenus_periode
           
         FROM entreprises e
-        LEFT JOIN clients c ON 1=1
-        LEFT JOIN tickets t ON t.entreprise_id = e.id AND t.date_creation >= $2
-        LEFT JOIN commandes cmd ON cmd.entreprise_id = e.id AND cmd.date_creation >= $2
+        LEFT JOIN tickets t ON t.entreprise_id = e.id AND t.date_creation >= CURRENT_DATE - INTERVAL '${interval}'
+        LEFT JOIN commandes cmd ON cmd.entreprise_id = e.id AND cmd.date_creation >= CURRENT_DATE - INTERVAL '${interval}'
+        LEFT JOIN clients c ON c.id = t.client_id OR c.id = cmd.client_id
         WHERE e.id = $1
       )
       SELECT * FROM stats
     `;
 
-    const result = await pool.query(query, [entrepriseId, dateFilter]);
+    const result = await pool.query(query, [entrepriseId]);
     return result.rows[0] || {};
   } catch (error) {
+    console.error("Erreur getGeneralStats:", error);
     throw error;
   }
 };
@@ -97,11 +97,13 @@ export const getTrendData = async (
         metricQuery = `COALESCE(SUM(cmd.cout_final), 0) as value`;
         break;
       case "clients":
-        metricQuery = `COUNT(DISTINCT cl.id) as value`;
+        metricQuery = `COUNT(DISTINCT c.id) as value`;
         break;
       default:
         metricQuery = `COUNT(t.id) as value`;
     }
+
+    const intervalStep = getIntervalStep(period);
 
     const query = `
       SELECT 
@@ -111,20 +113,19 @@ export const getTrendData = async (
         SELECT generate_series(
           CURRENT_DATE - INTERVAL '1 ${period}', 
           CURRENT_DATE, 
-          '1 ${getIntervalStep(period)}'::interval
+          '1 ${intervalStep}'::interval
         ) as date_point
       ) dates
       LEFT JOIN tickets t ON 
         t.entreprise_id = $1 
         AND DATE_TRUNC($2, t.date_creation) = DATE_TRUNC($2, dates.date_point)
-        ${metric === "revenus" || metric === "commandes" ? "" : ""}
       LEFT JOIN commandes cmd ON 
         cmd.entreprise_id = $1 
         AND DATE_TRUNC($2, cmd.date_creation) = DATE_TRUNC($2, dates.date_point)
         ${metric === "revenus" ? "AND cmd.statut = 'livree'" : ""}
-      LEFT JOIN clients cl ON 
-        cl.id IS NOT NULL
-        AND DATE_TRUNC($2, cl.date_creation) = DATE_TRUNC($2, dates.date_point)
+      LEFT JOIN clients c ON 
+        (c.id = t.client_id OR c.id = cmd.client_id)
+        AND DATE_TRUNC($2, c.date_creation) = DATE_TRUNC($2, dates.date_point)
       GROUP BY DATE_TRUNC($2, dates.date_point)
       ORDER BY period ASC
     `;
@@ -132,6 +133,7 @@ export const getTrendData = async (
     const result = await pool.query(query, [entrepriseId, dateTrunc]);
     return result.rows;
   } catch (error) {
+    console.error("Erreur getTrendData:", error);
     throw error;
   }
 };
@@ -354,6 +356,7 @@ export const getSectorData = async (entrepriseId) => {
     const result = await pool.query(query, [entrepriseId]);
     return result.rows;
   } catch (error) {
+    console.error("Erreur getSectorData:", error);
     throw error;
   }
 };
