@@ -27,7 +27,7 @@ const ButtonTicket: React.FC<ButtonTicketProps> = ({
       </button>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+        <div className="fixed inset-0 bg-[rgb(30,64,175,0.3)] bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-xl w-full shadow-lg relative">
             {/* Bouton fermer */}
             <button

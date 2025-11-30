@@ -46,7 +46,6 @@ const InscriptionClient = () => {
     rccmIfu: "",
     adresseProfessionnelle: "",
     whatsappEntreprise: "",
-    contactEntreprise: "",
     siteInternet: "",
     linkedin: "",
     password: "",
@@ -61,17 +60,25 @@ const InscriptionClient = () => {
     whatsappPersonnel: Yup.string().required("Le WhatsApp personnel est obligatoire"),
     canalContact: Yup.string().required("Le canal de contact préféré est obligatoire"),
     clientType: Yup.string().required(),
+    poste: Yup.string().when("clientType", (value: unknown, schema: Yup.StringSchema) => {
+      // value peut être string ou tableau selon l'overload TS
+      const clientType = Array.isArray(value) ? value[0] : value;
+      return clientType === "entreprise"
+        ? schema.required("Le poste est obligatoire")
+        : schema.notRequired();
+    }),
+
+
+
   });
 
   const step2EntrepriseSchema = Yup.object({
     nomEntreprise: Yup.string().required("Le nom de l'entreprise est obligatoire"),
     secteurActivite: Yup.string().required("Le secteur d'activité est obligatoire"),
     tailleEntreprise: Yup.string().required("La taille de l'entreprise est obligatoire"),
-    poste: Yup.string().required("Le poste est obligatoire"),
     rccmIfu: Yup.string().required("Le RCCM/IFU est obligatoire"),
     adresseProfessionnelle: Yup.string().required("L'adresse professionnelle est obligatoire"),
     whatsappEntreprise: Yup.string().required("Le WhatsApp de l'entreprise est obligatoire"),
-    contactEntreprise: Yup.string().required("Le contact entreprise est obligatoire"),
     siteInternet: Yup.string().url("URL invalide").required("Le site internet est obligatoire"),
     linkedin: Yup.string().url("URL invalide").required("Le LinkedIn est obligatoire"),
   });
@@ -83,7 +90,7 @@ const InscriptionClient = () => {
       .required("Confirmez votre mot de passe"),
   });
 
-  const handleSubmit = (values) => {
+  const handleSubmit = (values: typeof initialValues) => {
     console.log("Formulaire soumis :", values);
     alert("Inscription réussie !");
   };
@@ -92,7 +99,7 @@ const InscriptionClient = () => {
   const progress = (step / stepsTotal) * 100;
 
   return (
-    <div className="pt-32 w-full bg-white">
+    <div className="pt-24 w-full bg-white">
       <div className="max-w-md mx-auto bg-gray-50 rounded-lg shadow-lg p-8">
         <h1 className="text-2xl font-bold mb-6 text-blue-800 text-center">
           Inscription Client
@@ -106,7 +113,17 @@ const InscriptionClient = () => {
           ></div>
         </div>
 
-        <Formik initialValues={initialValues} onSubmit={handleSubmit}>
+        <Formik
+          initialValues={initialValues}
+          onSubmit={handleSubmit}
+          validationSchema={
+            step === 1
+              ? step1Schema
+              : clientType === "entreprise" && step === 2
+                ? step2EntrepriseSchema
+                : stepFinalPasswordSchema
+          }
+        >
           {({ values, validateForm, setFieldValue }) => (
             <Form className="space-y-4 overflow-hidden">
                 
@@ -123,7 +140,7 @@ const InscriptionClient = () => {
                     transition={{ duration: 0.4 }}
                     className="space-y-4"
                   >
-                    <h1 className="text-black font-semibold text-xl">Informations personnelles</h1>
+                    <h1 className="text-black font-semibold text-xl"> <span className="text-blue-700">Etape1:</span> Informations personnelles</h1>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Prénom</label>
                       <Field
@@ -182,7 +199,7 @@ const InscriptionClient = () => {
                         as="select"
                         name="clientType"
                         className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        onChange={(e) => {
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                           setFieldValue("clientType", e.target.value);
                           setClientType(e.target.value);
                         }}
@@ -191,7 +208,15 @@ const InscriptionClient = () => {
                         <option value="entreprise">Entreprise</option>
                       </Field>
                     </div>
-
+                    {clientType === "entreprise" &&(
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Quel poste occupez vous?</label>
+                          <Field name="poste" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          <ErrorMessage name="poste" component="div" className="text-red-500 text-sm mt-1" />
+                        </div>
+                      )
+                    }
+                    
                     <button
                       type="button"
                       className="w-full bg-blue-700 text-white font-semibold py-2 rounded-md hover:bg-blue-700 transition mt-6"
@@ -219,7 +244,7 @@ const InscriptionClient = () => {
                     transition={{ duration: 0.4 }}
                     className="space-y-4"
                   >
-                    <h1 className="text-black font-semibold text-xl">Informations de l'entreprise</h1>
+                    <h1 className="text-black font-semibold text-xl"><span className="text-blue-700">Etape2:</span>Informations de l'entreprise</h1>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Nom de l'entreprise</label>
                       <Field name="nomEntreprise" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -249,19 +274,13 @@ const InscriptionClient = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Poste</label>
-                      <Field name="poste" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      <ErrorMessage name="poste" component="div" className="text-red-500 text-sm mt-1" />
-                    </div>
-
-                    <div>
                       <label className="block text-sm font-medium text-gray-700">RCCM / IFU</label>
                       <Field name="rccmIfu" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                       <ErrorMessage name="rccmIfu" component="div" className="text-red-500 text-sm mt-1" />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Adresse professionnelle</label>
+                      <label className="block text-sm font-medium text-gray-700">Email entreprise</label>
                       <Field name="adresseProfessionnelle" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                       <ErrorMessage name="adresseProfessionnelle" component="div" className="text-red-500 text-sm mt-1" />
                     </div>
@@ -270,12 +289,6 @@ const InscriptionClient = () => {
                       <label className="block text-sm font-medium text-gray-700">WhatsApp entreprise</label>
                       <Field name="whatsappEntreprise" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                       <ErrorMessage name="whatsappEntreprise" component="div" className="text-red-500 text-sm mt-1" />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Contact entreprise</label>
-                      <Field name="contactEntreprise" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      <ErrorMessage name="contactEntreprise" component="div" className="text-red-500 text-sm mt-1" />
                     </div>
 
                     <div>
@@ -289,16 +302,19 @@ const InscriptionClient = () => {
                       <Field type="url" name="linkedin" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                       <ErrorMessage name="linkedin" component="div" className="text-red-500 text-sm mt-1" />
                     </div>
-
-                    <button
+                    <div className="flex gap-2">
+                      <button type="button" className="flex-1 bg-gray-400 text-white font-semibold py-2 rounded-md hover:bg-gray-500 transition" onClick={() => setStep(1)}>Précédent</button>
+                      <button
                       type="button"
-                      className="w-full bg-blue-700 text-white font-semibold py-2 rounded-md hover:bg-blue-700 transition mt-6"
+                      className="flex-1 bg-blue-700 text-white font-semibold py-2 rounded-md hover:bg-blue-800 transition"
                       onClick={() =>
                         step2EntrepriseSchema.validate(values, { abortEarly: false }).then(() => setStep(3)).catch(() => {})
                       }
-                    >
-                      Suivant
-                    </button>
+                      >
+                        Suivant
+                      </button>                   
+                    </div>
+                      
                   </motion.div>
                 )}
 
@@ -313,7 +329,7 @@ const InscriptionClient = () => {
                     transition={{ duration: 0.4 }}
                     className="space-y-4"
                   >
-                    <h1 className="text-black font-semibold text-xl">Sécurité du compte</h1>
+                    <h1 className="text-black font-semibold text-xl"><span className="text-blue-700"> {clientType === "entreprise" ? "Etape3:" : "Etape2:"} </span>Sécurité du compte</h1>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Mot de passe</label>
                       <Field type="password" name="password" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -325,18 +341,32 @@ const InscriptionClient = () => {
                       <Field type="password" name="confirmPassword" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                       <ErrorMessage name="confirmPassword" component="div" className="text-red-500 text-sm mt-1" />
                     </div>
-
-                    <button
+                    <div className="flex gap-2">
+                      <button type="button" className="flex-1 bg-gray-400 text-white font-semibold py-2 rounded-md hover:bg-gray-500 transition" onClick={() => {
+                        if (clientType === "entreprise") {
+                          setStep(2);
+                        } else {
+                          setStep(1);
+                        }
+                        }}
+                        >Précédent
+                      </button>
+                      <button
                       type="button"
-                      className="w-full bg-blue-800 text-white font-semibold py-2 rounded-md hover:bg-blue-700 transition mt-6"
+                      className="flex-1 bg-blue-700 text-white font-semibold py-2 rounded-md hover:bg-blue-800 transition"
                       onClick={() =>
                         stepFinalPasswordSchema.validate(values, { abortEarly: false }).then(() => {
-                          document.querySelector("form").dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+                          const form = document.querySelector("form");
+                          if (form) {
+                            form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+                          }
                         }).catch(() => {})
                       }
-                    >
-                      S'inscrire
-                    </button>
+                      >
+                        S'inscrire
+                      </button>                    
+                    </div>
+                    
                   </motion.div>
                 )}
               </AnimatePresence>

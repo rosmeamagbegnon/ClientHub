@@ -10,7 +10,7 @@ const NavbarClient = () => {
   const navLinks = [
     { path: "/dashboardclient", label: "Accueil" },
     { path: "/ticketsclient", label: "Mes Demandes" },
-    { path: "/commandesclient", label: "Mes Commandes" },
+    { path: "/commandesclient", label: "Mes Propositions" },
     { path: "/bonusclient", label: "Mes Bonus" },
     { path: "/chatbot", label: "Chat" },
   ];
@@ -22,8 +22,8 @@ const NavbarClient = () => {
       : "text-black font-semibold";
 
   return (
-    <nav className="bg-blue-100 text-black shadow-md">
-      <div className="max-w-7xl mx-auto px-4  lg:px-0">
+    <nav className="bg-blue-100 text-black shadow-md items-center">
+      <div className="max-w-7xl mx-auto px-6  xl:px-0 items-center">
         <div className="flex justify-between h-16 items-center">
           <Logo />
 
@@ -45,24 +45,42 @@ const NavbarClient = () => {
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
+          <div className="hidden lg:block">
+            <Link
+              to="/profilclient"
+              className="bg-blue-800 text-white px-4 py-2 rounded font-semibold"
+            >
+              Profil
+            </Link>
+          </div>
         </div>
       </div>
 
       {/* Menu mobile */}
       {isOpen && (
-        <div className="lg:hidden bg-blue-100 px-2 pt-2 pb-4 space-y-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              className={`block px-3 py-2 rounded ${linkClass(link.path)}`}
-              onClick={() => setIsOpen(false)} // <-- Ferme le menu mobile au clic
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className="lg:hidden bg-blue-100 px-2 pt-2 pb-4 space-y-1">
+        {navLinks.map((link) => (
+          <Link
+            key={link.path}
+            to={link.path}
+            className={`block px-3 py-2 rounded ${linkClass(link.path)}`}
+            onClick={() => setIsOpen(false)}
+          >
+            {link.label}
+          </Link>
+        ))}
+
+        {/* Ajout du bouton Profil dans le menu mobile */}
+        <Link
+          to="/profilclient"
+          className="block bg-blue-800 text-white px-3 py-2 rounded  font-semibold text-center"
+          onClick={() => setIsOpen(false)}
+        >
+          Profil
+        </Link>
+      </div>
+    )}
+
     </nav>
   );
 };

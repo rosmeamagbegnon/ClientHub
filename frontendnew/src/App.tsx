@@ -17,6 +17,7 @@ import DashboardEntreprise from './pages/dashboardEntreprise';
 import SidebarEntreprise from './components/sidebarEntreprise';
 import ClientsEntreprise from './pages/clientsEntreprise';
 import TicketsEntreprise from './pages/ticketsEntreprise';
+import ProfilClient from './pages/profilClient';
 // Layout qui choisit la navbar en fonction de la route
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -31,6 +32,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     "/bonusclient",
     "/chatbot",
     "/ajoutticket",
+    "/profilclient",
   ];
 
   // 👉 Routes entreprise
@@ -90,6 +92,7 @@ function App() {
           <Route path="/commandesclient" element={<CommandesClient />} />
           <Route path="/bonusclient" element={<BonusClient />} />
           <Route path="/chatbot" element={<Chatbot />} />
+          <Route path="/profilclient" element={<ProfilClient />} />
 
           {/* ENTREPRISE */}
           <Route path="/dashboardentreprise" element={<DashboardEntreprise />} />

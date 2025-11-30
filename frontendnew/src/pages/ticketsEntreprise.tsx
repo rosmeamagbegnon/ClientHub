@@ -20,12 +20,14 @@ interface Ticket {
     | "Assignée"
     | "En cours de traitement"
     | "Traitée";
-  dueDate: string; // date d'échéance
+  dueDate: string;
   notes: string[];
 }
 
 const TicketsEntreprise = () => {
-  const ticketsData: Ticket[] = [
+
+  // PUT ticketsData IN STATE (IMPORTANT)
+  const [ticketsData, setTicketsData] = useState<Ticket[]>([
     {
       id: 1,
       title: "Problème de connexion",
@@ -53,7 +55,7 @@ const TicketsEntreprise = () => {
       dueDate: "2025-02-15",
       notes: ["Suggestion acceptée et mise en place."]
     },
-  ];
+  ]);
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -74,11 +76,37 @@ const TicketsEntreprise = () => {
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
-  const addNote = () => {
-    if (selectedTicket && newNote.trim()) {
-      selectedTicket.notes.push(newNote.trim());
-      setNewNote("");
+  // 🔵 AUTOMATIC STATUS UPDATE
+  const updateTicketStatus = (id: number, newStatus: Ticket["status"]) => {
+    setTicketsData(prev =>
+      prev.map(ticket =>
+        ticket.id === id ? { ...ticket, status: newStatus } : ticket
+      )
+    );
+
+    if (selectedTicket && selectedTicket.id === id) {
+      setSelectedTicket({ ...selectedTicket, status: newStatus });
     }
+  };
+
+  // 🔵 AUTOMATIC NOTE SAVE
+  const addNote = () => {
+    if (!selectedTicket || !newNote.trim()) return;
+
+    setTicketsData(prev =>
+      prev.map(t =>
+        t.id === selectedTicket.id
+          ? { ...t, notes: [...t.notes, newNote.trim()] }
+          : t
+      )
+    );
+
+    setSelectedTicket({
+      ...selectedTicket,
+      notes: [...selectedTicket.notes, newNote.trim()],
+    });
+
+    setNewNote("");
   };
 
   return (
@@ -131,13 +159,13 @@ const TicketsEntreprise = () => {
               <h2 className="text-xl font-semibold text-blue-800 mb-2 line-clamp-1">{ticket.title}</h2>
               <p className="text-gray-700 mb-1"><span className="font-semibold">Client:</span> {ticket.client}</p>
               <p className="text-gray-700 mb-1"><span className="font-semibold">Type:</span> {ticket.type}</p>
-              <p className="text-gray-700 mb-1"> <span className="font-semibold">Statut:</span>
+              <p className="text-gray-700 mb-1"><span className="font-semibold">Statut:</span>
                 <Badge className={`${TicketStatusColor[ticket.status]}`}>{ticket.status}</Badge>
               </p>
-              <p className="text-gray-700 mb-4"> <span className="font-semibold">Échéance :</span>  {ticket.dueDate}</p>
-                <Button className="bg-blue-800 text-white" size="sm" variant="outline" onClick={() => setSelectedTicket(ticket)}>
-                  <Eye className="w-4 h-4 mr-1"/> Voir
-                </Button>
+              <p className="text-gray-700 mb-4"><span className="font-semibold">Échéance :</span> {ticket.dueDate}</p>
+              <Button className="bg-blue-800 text-white" size="sm" variant="outline" onClick={() => setSelectedTicket(ticket)}>
+                <Eye className="w-4 h-4 mr-1"/> Voir
+              </Button>
             </CardContent>
           </Card>
         ))}
@@ -152,27 +180,57 @@ const TicketsEntreprise = () => {
 
       {/* Modal détails */}
       {selectedTicket && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+        <div className="fixed inset-0 bg-[rgb(30,64,175,0.4)] bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 relative">
             <button className="absolute top-3 right-6 text-gray-600 hover:text-gray-900 text-xl md:text-2xl font-bold" onClick={() => setSelectedTicket(null)}>×</button>
+            
             <h2 className="text-xl font-bold text-blue-800 mb-4">{selectedTicket.title}</h2>
             <p><span className="font-semibold">Client:</span> {selectedTicket.client}</p>
             <p><span className="font-semibold">Type:</span> {selectedTicket.type}</p>
-            <p><span className="font-semibold">Statut:</span> <Badge className={`${TicketStatusColor[selectedTicket.status]}`}>{selectedTicket.status}</Badge></p>
-            <p><span className="font-semibold">Échéance:</span> {selectedTicket.dueDate}</p>
+
+            {/* STATUS + SELECT */}
+            <p className="flex items-center gap-2 mt-2">
+              <span className="font-semibold">Statut:</span>
+              <Badge className={`${TicketStatusColor[selectedTicket.status]}`}>{selectedTicket.status}</Badge>
+            </p>
+
+            <div className="mt-2">
+              <Select onValueChange={(value) => updateTicketStatus(selectedTicket.id, value as Ticket["status"])}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Changer le statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="En cours d'étude">En cours d'étude</SelectItem>
+                  <SelectItem value="Rejetée">Rejetée</SelectItem>
+                  <SelectItem value="Acceptée">Acceptée</SelectItem>
+                  <SelectItem value="Assignée">Assignée</SelectItem>
+                  <SelectItem value="En cours de traitement">En cours de traitement</SelectItem>
+                  <SelectItem value="Traitée">Traitée</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <p className="mt-3"><span className="font-semibold">Échéance:</span> {selectedTicket.dueDate}</p>
             
+            {/* Notes */}
             <div className="mt-4">
               <h3 className="font-semibold mb-2">Notes:</h3>
               <div className="max-h-40 overflow-auto border p-2 rounded-md bg-gray-50 space-y-1 mb-3">
-                {selectedTicket.notes.length > 0 ? selectedTicket.notes.map((note, idx) => (
-                  <p key={idx} className="text-gray-700 text-sm">• {note}</p>
-                )) : <p className="text-gray-500 text-sm">Aucune note disponible</p>}
+                {selectedTicket.notes.length > 0 ? (
+                  selectedTicket.notes.map((note, idx) => (
+                    <p key={idx} className="text-gray-700 text-sm">• {note}</p>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-sm">Aucune note disponible</p>
+                )}
               </div>
+
               <div className="flex gap-2">
                 <Input placeholder="Ajouter une note..." value={newNote} onChange={(e) => setNewNote(e.target.value)} />
                 <Button className="bg-blue-800" onClick={addNote}>Ajouter une note</Button>
               </div>
             </div>
+
           </div>
         </div>
       )}

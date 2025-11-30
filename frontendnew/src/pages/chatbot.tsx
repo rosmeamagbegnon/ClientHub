@@ -1,116 +1,79 @@
-import { useState } from "react";
-import { Send, Mic, Zap } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
+import { Globe, LineChart, BookOpen } from "lucide-react";
 
-export default function ChatBotModern() {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: "bot",
-      text: "Hey there! Need a boost?",
-    },
-  ]);
-
-  const [input, setInput] = useState("");
-
-  const sendMessage = () => {
-    if (!input.trim()) return;
-
-    const newMessage = {
-      id: Date.now(),
-      sender: "user",
-      text: input,
-    };
-
-    setMessages([...messages, newMessage]);
-    setInput("");
-
-    // Fake bot reply
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          sender: "bot",
-          text: "Merci pour votre message ! Comment puis‑je vous aider aujourd’hui ?",
-        },
-      ]);
-    }, 700);
-  };
-
+export default function ChatbotInterface() {
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-gray-100 to-blue-50 flex flex-col items-center p-4">
-      {/* Header */}
-      <div className="text-center mt-6 mb-10">
-        <h1 className="text-3xl font-bold text-gray-800">Bienvenue 👋</h1>
-        <p className="text-gray-600 text-lg font-medium">Prêt à accomplir de grandes choses ?</p>
-      </div>
-
-      {/* Bot Illustration */}
-      <div className="relative mb-10">
-        <div className="w-32 h-32 bg-white shadow-xl rounded-full flex items-center justify-center">
-          <div className="w-20 h-20 bg-gray-900 rounded-xl flex items-center justify-center text-white text-2xl font-bold">
-            🤖
-          </div>
-        </div>
-
-        {/* Small floating bubbles */}
-        <div className="absolute -left-20 top-10 bg-white shadow-md rounded-full px-4 py-2 text-sm font-medium text-gray-700">
-          Hey there! Need a boost?
-        </div>
-        <div className="absolute -right-20 top-0 bg-white shadow-md rounded-full px-4 py-2 text-sm font-medium text-gray-700">
-          Comment puis‑je t’aider ?
-        </div>
-      </div>
-
-      {/* Chat Container */}
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-4 md:p-6 flex flex-col gap-4">
-        <div className="flex flex-col gap-3 max-h-96 overflow-y-auto pr-2">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`max-w-[80%] px-4 py-3 rounded-xl text-sm font-medium shadow-md ${
-                msg.sender === "user"
-                  ? "ml-auto bg-blue-600 text-white"
-                  : "mr-auto bg-gray-100 text-gray-800"
-              }`}
-            >
-              {msg.text}
-            </div>
-          ))}
-        </div>
-
-        {/* Input Area */}
-        <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border">
-          <button className="p-2 bg-white shadow rounded-xl hover:bg-gray-100 transition">
-            <Mic size={22} />
-          </button>
-
+    <div className="w-full h-screen flex bg-white text-gray-800 flex-col md:flex-row">
+      {/* Sidebar */}
+      <div className="w-full md:w-64 border-r bg-gray-50 flex flex-col justify-between p-4 md:h-full h-auto">
+        <div>
           <input
-            type="text"
-            placeholder="Écrire un message…"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            className="flex-1 bg-transparent outline-none px-2 text-gray-700"
+            placeholder="Search chat"
+            className="w-full p-2 rounded-xl bg-white border mb-4"
           />
 
-          <button
-            onClick={sendMessage}
-            className="p-3 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition"
-          >
-            <Send size={20} />
-          </button>
+          <div className="hidden md:block space-y-3">
+            <div className="text-sm font-semibold text-gray-600">Fichiers</div>
+            <div className="text-sm font-semibold text-gray-600">Historique</div>
+          </div>
+
+          <div className="mt-6 text-xs text-gray-500 uppercase hidden md:block">Discussions récentes</div>
+          <div className="mt-2 space-y-2 hidden md:block">
+            <div className="p-2 rounded-lg bg-white border text-sm">Brainstorming small business</div>
+            <div className="p-2 rounded-lg bg-white border text-sm">The history of Roman Empire</div>
+            <div className="p-2 rounded-lg bg-white border text-sm">Crypto investment suggestions</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main */}
+      <div className="flex-1 flex flex-col items-center justify-start pt-10 md:pt-24 px-4 md:px-0">
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-blue-800 to-blue-500 bg-clip-text text-transparent text-center"
+        >
+          Hello Marcus
+        </motion.h1>
+
+        <p className="mt-2 md:mt-3 text-lg md:text-2xl text-gray-500 text-center">How can I help you today?</p>
+
+        <div className="justify-center flex flex-col md:flex-row gap-4 md:gap-6 mt-10 md:mt-12 w-full max-w-md md:max-w-none">
+          <Card className="w-full md:w-56 cursor-pointer shadow-sm hover:shadow-md transition">
+            <CardContent className="p-4 text-center">
+              <Globe className="mx-auto mb-3" />
+              <div className="font-semibold">What's Happen in 24 hours?</div>
+              <p className="text-sm text-gray-500 mt-1">See what's been happening in the world over the last 24 hours</p>
+            </CardContent>
+          </Card>
+
+          <Card className="w-full md:w-56 cursor-pointer shadow-sm hover:shadow-md transition">
+            <CardContent className="p-4 text-center">
+              <LineChart className="mx-auto mb-3" />
+              <div className="font-semibold">Stock market update</div>
+              <p className="text-sm text-gray-500 mt-1">See what's happening in the stock market in real time</p>
+            </CardContent>
+          </Card>
+
+          <Card className="w-full md:w-56 cursor-pointer shadow-sm hover:shadow-md transition">
+            <CardContent className="p-4 text-center">
+              <BookOpen className="mx-auto mb-3" />
+              <div className="font-semibold">Deep economic research</div>
+              <p className="text-sm text-gray-500 mt-1">See research from experts that we have simplified</p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Feature Buttons */}
-        <div className="flex justify-center gap-3 flex-wrap mt-3">
-          {["Fichier", "Raisonnement", "Créer Image", "Recherche avancée"].map((txt) => (
-            <button
-              key={txt}
-              className="flex items-center gap-1 bg-white shadow px-4 py-2 rounded-full text-gray-600 hover:bg-gray-100 transition text-sm"
-            >
-              <Zap size={16} /> {txt}
-            </button>
-          ))}
+        <div className="w-full max-w-lg md:max-w-3xl mt-12 md:mt-16 px-2 md:px-0">
+          <input
+            placeholder="Ask something.."
+            className="w-full p-4 rounded-full border shadow-sm"
+          />
+        </div>
+
+        <div className="text-xs text-gray-400 mt-4 text-center pb-6 md:pb-0">
+          Join the valerius community for more insights <span className="text-purple-500 cursor-pointer">Join Discord</span>
         </div>
       </div>
     </div>

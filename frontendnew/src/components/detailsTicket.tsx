@@ -22,7 +22,7 @@ function DetailsTicket({ isOpen, onClose, ticket }: DetailsTicketProps) {
     <AnimatePresence>
       {isOpen && ticket && (
         <motion.div
-          className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4"
+          className="fixed inset-0 bg-[rgb(30,64,175,0.3)] bg-opacity-50 flex justify-center items-center z-50 p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

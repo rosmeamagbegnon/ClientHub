@@ -1,14 +1,11 @@
 import React from "react";
-import {Ticket} from "lucide-react";
+import L1 from "/assets/log1.svg";
 import {Link} from "react-router-dom";
 const Logo: React.FC = () => {
   return (
-    <div>
-        <Link to="/" className="flex items-center space-x-2 text-blue-800 font-bold">
-            <Ticket size={24} />
-            <span className="text-2xl   ">
-                TicketsMaster
-            </span>
+    <div >
+        <Link to="/" className="">
+            <img src={L1} alt="ClientHub"/>
         </Link>
     </div>
   );
