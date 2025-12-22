@@ -1,13 +1,13 @@
 import React from "react";
 import L1 from "/assets/log1.svg";
 import {Link} from "react-router-dom";
-const Logo: React.FC = () => {
+const Logo2: React.FC = () => {
   return (
     <div >
-        <Link to="/portailclient" className="">
+        <Link to="/" className="">
             <img src={L1} alt="ClientHub"/>
         </Link>
     </div>
   );
 };  
-export default Logo;
+export default Logo2;

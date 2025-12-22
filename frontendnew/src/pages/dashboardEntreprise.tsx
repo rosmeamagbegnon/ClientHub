@@ -1,7 +1,8 @@
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-import { Ticket,  Users, Settings, PlusCircle } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { Ticket,  Users, Settings } from "lucide-react";
 import { TicketStatusColors } from "../config/ticketStatusColor";
 import { Link } from "react-router-dom";
+import { CardTitle } from "@/components/ui/card";
 
 // DashboardCompany.tsx
 // Page React + TypeScript complète pour le dashboard d'une entreprise
@@ -35,12 +36,6 @@ const ticketsByDay = [
   { date: "2025-11-07", value: 15 },
 ];
 
-const ticketsByType = [
-  { name: "Technique", value: 82 },
-  { name: "Facturation", value: 64 },
-  { name: "Suggestion", value: 37 },
-  { name: "Réclamation", value: 30 },
-];
 
 const clients = [
   { id: 1, name: "Société A", tickets: 12, lastActivity: "2025-11-12" },
@@ -48,7 +43,6 @@ const clients = [
   { id: 3, name: "Client C", tickets: 5, lastActivity: "2025-11-09" },
 ];
 
-const COLORS = ["#60A5FA", "#FBBF24", "#34D399", "#F87171"];
 
 // --- Subcomponents ---
 function KPIGrid() {
@@ -85,23 +79,6 @@ function TicketsTrendChart() {
   );
 }
 
-function TicketsByTypePie() {
-  return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 h-56">
-      <h3 className="text-lg font-semibold mb-2">Répartition par type</h3>
-      <ResponsiveContainer width="100%" height="80%">
-        <PieChart>
-          <Pie data={ticketsByType} dataKey="value" nameKey="name" outerRadius={70} label>
-            {ticketsByType.map((_, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Legend />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
 
 function RecentTicketsTable({ onView }: { onView: (id: number) => void }) {
   return (
@@ -137,7 +114,7 @@ function RecentClients() {
     <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Clients actifs</h3>
-        <Link to="/clients" className="text-sm text-blue-800 font-medium hover:underline">Voir tout</Link>
+        <Link to="/clientsentreprise" className="text-sm text-blue-800 font-medium hover:underline">Voir tout</Link>
       </div>
 
       <ul className="space-y-3">
@@ -158,17 +135,13 @@ function RecentClients() {
 function QuickActions() {
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-      <h3 className="text-lg font-semibold mb-3">Accès rapide</h3>
-      <div className="grid grid-cols-1 gap-3">
-        <Link to="/tickets/new" className="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-800 text-white hover:bg-blue-700">
-          <PlusCircle size={18} />
-          <span>Créer un ticket</span>
-        </Link>
-        <Link to="/tickets" className="flex items-center gap-3 px-4 py-3 rounded-lg border hover:shadow">
+      <h3 className="text-lg font-semibold mb-3 text-blue-800">Accès rapide</h3>
+      <div className="grid grid-cols-1 gap-3 ">
+        <Link to="/ticketsentreprise" className="flex items-center gap-3 px-4 py-3 rounded-lg border hover:shadow">
           <Ticket size={18} />
           <span>Voir tous les tickets</span>
         </Link>
-        <Link to="/clients" className="flex items-center gap-3 px-4 py-3 rounded-lg border hover:shadow">
+        <Link to="/clientsentreprise" className="flex items-center gap-3 px-4 py-3 rounded-lg border hover:shadow">
           <Users size={18} />
           <span>Clients</span>
         </Link>
@@ -194,7 +167,7 @@ export default function DashboardEntreprise() {
         {/* Header */}
         <header className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900">Dashboard entreprise</h1>
+            <CardTitle className="text-3xl font-bold text-blue-800">Dashboard</CardTitle>
             <p className="text-sm text-gray-500 mt-1">Vue globale des activités et performances</p>
           </div>
           <div className="flex items-center gap-3">
@@ -210,7 +183,6 @@ export default function DashboardEntreprise() {
           <div className="lg:col-span-2 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <TicketsTrendChart />
-              <TicketsByTypePie />
             </div>
 
             <RecentTicketsTable onView={handleView} />

@@ -1,3 +1,4 @@
+import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 
@@ -13,7 +14,7 @@ interface FormValues {
     motDePasse: string;
 }
 
-export default function ConnexionEntreprise(): JSX.Element {
+export default function ConnexionEntreprise(): React.ReactElement {
     const initialValues: FormValues = {
         rccm_ifu: '',
         email: '',
@@ -53,7 +54,6 @@ export default function ConnexionEntreprise(): JSX.Element {
                                     id="rccm_ifu"
                                     name="rccm_ifu"
                                     type="text"
-                                    placeholder="Ex : RB/COT/20XX..."
                                     aria-invalid={Boolean(touched.rccm_ifu && errors.rccm_ifu)}
                                     className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />

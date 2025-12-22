@@ -12,7 +12,6 @@ const NavbarClient = () => {
     { path: "/ticketsclient", label: "Mes Demandes" },
     { path: "/commandesclient", label: "Mes Propositions" },
     { path: "/bonusclient", label: "Mes Bonus" },
-    { path: "/chatbot", label: "Chat" },
   ];
 
   // fonction pour déterminer le style d'un lien

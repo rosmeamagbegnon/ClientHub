@@ -12,19 +12,29 @@ import DashboardClient from './pages/dashboardClient';
 import TicketsClient from './pages/ticketsClient';
 import CommandesClient from './pages/commandesClient';
 import BonusClient from './pages/bonusClient';
-import Chatbot from './pages/chatbot';
 import DashboardEntreprise from './pages/dashboardEntreprise';
 import SidebarEntreprise from './components/sidebarEntreprise';
 import ClientsEntreprise from './pages/clientsEntreprise';
 import TicketsEntreprise from './pages/ticketsEntreprise';
 import ProfilClient from './pages/profilClient';
+import Opportunites from './pages/opportunites';
+import Landing from './pages/landingPage';
+import Navbar3 from './components/navbar3';
+import NavbarP from './components/navbarPortailC';
+import FloatingChat from './components/floatingChat';
+import BonusEntreprise from './pages/bonusEntreprise';
+import ListeEmployes from './pages/listeEmployes';
+import ProfilEmploye from './pages/profilEmploye';
+
 // Layout qui choisit la navbar en fonction de la route
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   let navbarToShow: React.ReactElement;
 
-  // Routes client → NavbarClient
+  // ✅ Route spéciale portail client
+  const isPortailClient = location.pathname === "/portailclient";
+
   const clientRoutes = [
     "/dashboardclient",
     "/ticketsclient",
@@ -33,19 +43,45 @@ function Layout({ children }: { children: React.ReactNode }) {
     "/chatbot",
     "/ajoutticket",
     "/profilclient",
+    "/portailclient",
   ];
 
-  // 👉 Routes entreprise
   const entrepriseRoutes = [
     "/dashboardentreprise",
     "/ticketsentreprise",
     "/clientsentreprise",
     "/commandesentreprise",
     "/bonusentreprise",
-    "/parametresentreprise",
+    "/listeemployes",
+    "/opportunites",
+    "/profilemploye",
   ];
 
-  if (clientRoutes.some(route => location.pathname.startsWith(route))) {
+  const clientAuthRoutes = [
+    "/inscriptionclient",
+    "/connexionclient",
+  ];
+
+  const entrepriseAuthRoutes = [
+    "/connexionentreprise",
+    "/inscriptionentreprise",
+  ];
+
+  const showDashboardButtonRoutes = [
+  "/dashboardclient",
+  "/ticketsclient",
+  "/commandesclient",
+  "/bonusclient",
+  "/profilclient",
+];
+const showFloatingChat = showDashboardButtonRoutes.some(route =>
+  location.pathname.startsWith(route)
+);
+
+  if (isPortailClient) {
+    navbarToShow = <NavbarP />; // ✅ UNIQUEMENT /portailclient
+  }
+  else if (clientRoutes.some(route => location.pathname.startsWith(route))) {
     navbarToShow = <NavbarClient />;
   }
   else if (entrepriseRoutes.some(route => location.pathname.startsWith(route))) {
@@ -54,22 +90,21 @@ function Layout({ children }: { children: React.ReactNode }) {
   else if (location.pathname === "/") {
     navbarToShow = <Navbar2 />;
   }
-  else if (
-    location.pathname === "/inscriptionclient" ||
-    location.pathname === "/connexionclient" ||
-    location.pathname === "/connexionentreprise" ||
-    location.pathname === "/inscriptionentreprise"
-  ) {
+  else if (entrepriseAuthRoutes.includes(location.pathname)) {
+    navbarToShow = <Navbar3 />;
+  }
+  else if (clientAuthRoutes.includes(location.pathname)) {
     navbarToShow = <Navbar1 />;
-  } 
+  }
   else {
-    navbarToShow = <Navbar1 />; // fallback
+    navbarToShow = <Navbar1 />;
   }
 
   return (
     <>
       {navbarToShow}
       {children}
+      {showFloatingChat && <FloatingChat />}
     </>
   );
 }
@@ -79,26 +114,29 @@ function App() {
     <Router>
       <Layout>
         <Routes>
-          {/* PUBLIC */}
-          <Route path="/" element={<AccueilClient />} />
+          {/* CLIENT */}
+          <Route path="/portailclient" element={<AccueilClient />} />
           <Route path="/inscriptionclient" element={<InscriptionClient />} />
           <Route path="/connexionclient" element={<ConnexionClient />} />
-          <Route path="/connexionentreprise" element={<ConnexionEntreprise />} />
-          <Route path="/inscriptionentreprise" element={<InscriptionEntreprise />} />
-
-          {/* CLIENT */}
           <Route path="/dashboardclient" element={<DashboardClient />} />
           <Route path="/ticketsclient" element={<TicketsClient />} />
           <Route path="/commandesclient" element={<CommandesClient />} />
           <Route path="/bonusclient" element={<BonusClient />} />
-          <Route path="/chatbot" element={<Chatbot />} />
           <Route path="/profilclient" element={<ProfilClient />} />
 
           {/* ENTREPRISE */}
           <Route path="/dashboardentreprise" element={<DashboardEntreprise />} />
           <Route path="/clientsentreprise" element={<ClientsEntreprise />} />
           <Route path="/ticketsentreprise" element={<TicketsEntreprise />} />
-          
+          <Route path="/opportunites" element={<Opportunites />} />
+          <Route path="/bonusentreprise" element={<BonusEntreprise />} />
+          <Route path="/listeemployes" element={<ListeEmployes />} />
+          <Route path="/profilemploye" element={<ProfilEmploye />} />
+
+          {/* PUBLIC */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/connexionentreprise" element={<ConnexionEntreprise />} />
+          <Route path="/inscriptionentreprise" element={<InscriptionEntreprise />} />
         </Routes>
       </Layout>
     </Router>

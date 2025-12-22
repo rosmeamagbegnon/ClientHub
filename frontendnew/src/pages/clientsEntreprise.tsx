@@ -36,7 +36,7 @@ export default function ClientsEntreprise() {
     <div className=" space-y-6 bg-slate-100 p-6 absolute left-[15%] -z-50 w-[85%] h-full">
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle className="text-xl font-bold">Liste des Clients</CardTitle>
+          <CardTitle className="text-3xl font-bold text-blue-800">Liste des Clients</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
 

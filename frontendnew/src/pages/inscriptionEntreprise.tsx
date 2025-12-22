@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Formik, Form, Field } from "formik";
+import type { FormikProps } from "formik";
 import * as Yup from "yup";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const secteursOptions = [
   "Technologie",
@@ -44,63 +46,95 @@ const InscriptionEntreprise = () => {
     prenom_responsable: "",
     nom_responsable: "",
     email_responsable: "",
-    mot_de_passe: "",
-    confirm_password: "",
-    adresse_professionnelle: "",
+    password: "",
+    confirmPassword: "",
   };
 
-  // Schémas de validation
   const validationSchemas = [
-    // Step 1
     Yup.object({
-      nom_entreprise: Yup.string().trim().min(2, "Le nom doit contenir au moins 2 caractères").required("Le nom de l'entreprise est obligatoire"),
-      secteur_activite: Yup.string().required("Le secteur d'activité est obligatoire"),
-      taille_entreprise: Yup.string().required("La taille de l'entreprise est obligatoire"),
-      numero_rccm_ifu: Yup.string().trim().required("Le RCCM / IFU est obligatoire"),
+      nom_entreprise: Yup.string().trim().min(2).required(),
+      secteur_activite: Yup.string().required(),
+      taille_entreprise: Yup.string().required(),
+      numero_rccm_ifu: Yup.string().trim().required(),
     }),
-    // Step 2
+
     Yup.object({
-      telephone_entreprise: Yup.string().required("Le contact entreprise est obligatoire"),
-      whatsapp_entreprise: Yup.string().required("Le WhatsApp entreprise est obligatoire"),
+      telephone_entreprise: Yup.string()
+  .matches(/^\+229\d{8}$/, "Format attendu : +229XXXXXXXX")
+  .required("Le contact entreprise est obligatoire"),
+      whatsapp_entreprise: Yup.string()
+  .matches(/^\+229\d{8}$/, "Format attendu : +229XXXXXXXX")
+  .required("Le whatsapp de l'entreprise est obligatoire"),
       email_entreprise: Yup.string().email("Email invalide").required("L'email entreprise est obligatoire"),
-      site_internet: Yup.string().trim().url("URL invalide").notRequired().nullable().transform(v => (v === "" ? null : v)),
-      linkedin: Yup.string().trim().url("URL invalide").notRequired().nullable().transform(v => (v === "" ? null : v)),
+
+      site_internet: Yup.string()
+        .transform(v => (v?.trim() === "" ? undefined : v))
+        .notRequired()
+        .test(
+          "is-valid-url",
+          "URL invalide (ex: exemple.com)",
+          value => !value || /^https?:\/\/.+\..+/.test(value)
+        ),
+
+      linkedin: Yup.string()
+        .transform(v => (v?.trim() === "" ? undefined : v))
+        .notRequired()
+        .test(
+          "is-valid-url",
+          "URL invalide (ex: linkedin.com/...)",
+          value => !value || /^https?:\/\/.+\..+/.test(value)
+        ),
     }),
-    // Step 3
+
     Yup.object({
-      prenom_responsable: Yup.string().trim().min(2, "Le prénom doit contenir au moins 2 caractères").required("Le prénom du responsable est obligatoire"),
-      nom_responsable: Yup.string().trim().min(2, "Le nom doit contenir au moins 2 caractères").required("Le nom du responsable est obligatoire"),
-      email_responsable: Yup.string().email("Email invalide").required("L'email responsable est obligatoire"),
+      prenom_responsable: Yup.string().trim().min(2).required(),
+      nom_responsable: Yup.string().trim().min(2).required(),
+      email_responsable: Yup.string().email().required(),
     }),
-    // Step 4
+
     Yup.object({
-      mot_de_passe: Yup.string().min(6, "Minimum 6 caractères").required("Mot de passe obligatoire"),
-      confirm_password: Yup.string().oneOf([Yup.ref("mot_de_passe")], "Les mots de passe ne correspondent pas").required("Confirmez votre mot de passe"),
+      mot_de_passe: Yup.string()
+      .min(8, "Minimum 8 caractères")
+      .matches(/[A-Z]/, "Au moins une majuscule")
+      .matches(/[0-9]/, "Au moins un chiffre")
+      .matches(/[^A-Za-z0-9]/, "Au moins un symbole")
+      .required("Mot de passe obligatoire"),
+      confirm_password: Yup.string()
+        .oneOf([Yup.ref("mot_de_passe")])
+        .required(),
     }),
   ];
 
-  const handleNextStep = async (formikProps: any) => {
+  const handleNextStep = async (
+    formikProps: FormikProps<typeof initialValues>
+  ) => {
     const schema = validationSchemas[step - 1];
-    try {
-      const fieldsToValidate = Object.keys(schema.fields);
-      const valuesToValidate = fieldsToValidate.reduce((acc, key) => {
-        acc[key] = formikProps.values[key];
-        return acc;
-      }, {} as any);
 
-      await schema.validate(valuesToValidate, { abortEarly: false });
+    try {
+      await schema.validate(formikProps.values, {
+        abortEarly: false,
+        stripUnknown: true,
+      });
+
+      formikProps.setErrors({});
+
       if (step < validationSchemas.length) {
-        setStep(step + 1);
+        setStep(prev => prev + 1);
       } else {
         await handleSubmit(formikProps.values);
       }
-    } catch (err: any) {
-      err.inner.forEach((error: any) => {
-        if (error.path) formikProps.setFieldTouched(error.path, true);
-      });
+    } catch (err) {
+      if (err instanceof Yup.ValidationError) {
+        err.inner.forEach(error => {
+          if (error.path) {
+            formikProps.setFieldTouched(error.path, true, false);
+          }
+        });
+      }
     }
   };
-
+  
+  const navigate = useNavigate();
   const handleSubmit = async (values: typeof initialValues) => {
     try {
       const payload = {
@@ -109,31 +143,29 @@ const InscriptionEntreprise = () => {
         linkedin: values.linkedin || "",
       };
 
-      console.log("Envoi vers l'API :", payload);
-
-      const response = await fetch("http://localhost:3000/api/auth/entreprises/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const text = await response.text();
-      console.log("Réponse brute :", text);
+      const response = await fetch(
+        "http://localhost:3000/api/auth/entreprises/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!response.ok) {
-        alert("Erreur API : " + text);
-        return;
+        const error = await response.text();
+        console.error("Erreur backend :", error);
+        throw new Error(error);
       }
 
-      const data = JSON.parse(text);
-      console.log("Inscription réussie :", data);
       alert("Inscription réussie !");
-    } catch (err) {
-      console.error("Erreur fetch :", err);
+    } catch {
       alert("Une erreur est survenue. Vérifiez les informations.");
     }
+    navigate("/connexionentreprise"); // redirection
   };
 
+  
   const progress = (step / validationSchemas.length) * 100;
 
   return (
@@ -145,19 +177,26 @@ const InscriptionEntreprise = () => {
           <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
         </div>
 
-        <Formik initialValues={initialValues} onSubmit={handleSubmit} validateOnChange validateOnBlur>
-          {({ values, errors, touched, setFieldTouched }) => (
+        <Formik initialValues={initialValues} 
+        onSubmit={async (values, { setSubmitting }) => {
+                        try {
+                            await handleSubmit(values);
+                        } finally {
+                            setSubmitting(false);
+                        }
+                    }} validateOnChange validateOnBlur>
+          {(formikProps) => (
             <Form className="space-y-4 overflow-hidden">
               <AnimatePresence mode="wait">
 
                 {/* Step 1 */}
                 {step === 1 && (
                   <motion.div key="step1" initial="initial" animate="animate" exit="exit" variants={stepVariants} transition={{ duration: 0.4 }} className="space-y-4">
-                    <h2 className="text-black font-semibold text-xl">Informations de l'entreprise</h2>
+                    <h2 className="text-black font-semibold text-xl"><span className="text-blue-700">Etape1:</span>Informations de l'entreprise</h2>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Nom de l'entreprise *</label>
                       <Field name="nom_entreprise" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {touched.nom_entreprise && errors.nom_entreprise && <div className="text-red-500 text-sm mt-1">{errors.nom_entreprise}</div>}
+                      {formikProps.touched.nom_entreprise && formikProps.errors.nom_entreprise && <div className="text-red-500 text-sm mt-1">{formikProps.errors.nom_entreprise}</div>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Secteur d'activité *</label>
@@ -165,7 +204,7 @@ const InscriptionEntreprise = () => {
                         <option value="">-- Sélectionner --</option>
                         {secteursOptions.map(s => (<option key={s} value={s}>{s}</option>))}
                       </Field>
-                      {touched.secteur_activite && errors.secteur_activite && <div className="text-red-500 text-sm mt-1">{errors.secteur_activite}</div>}
+                      {formikProps.touched.secteur_activite && formikProps.errors.secteur_activite && <div className="text-red-500 text-sm mt-1">{formikProps.errors.secteur_activite}</div>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Taille de l'entreprise *</label>
@@ -173,49 +212,49 @@ const InscriptionEntreprise = () => {
                         <option value="">-- Sélectionner --</option>
                         {taillesEntrepriseOptions.map(t => (<option key={t} value={t}>{t}</option>))}
                       </Field>
-                      {touched.taille_entreprise && errors.taille_entreprise && <div className="text-red-500 text-sm mt-1">{errors.taille_entreprise}</div>}
+                      {formikProps.touched.taille_entreprise && formikProps.errors.taille_entreprise && <div className="text-red-500 text-sm mt-1">{formikProps.errors.taille_entreprise}</div>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">RCCM / IFU *</label>
                       <Field name="numero_rccm_ifu" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {touched.numero_rccm_ifu && errors.numero_rccm_ifu && <div className="text-red-500 text-sm mt-1">{errors.numero_rccm_ifu}</div>}
+                      {formikProps.touched.numero_rccm_ifu && formikProps.errors.numero_rccm_ifu && <div className="text-red-500 text-sm mt-1">{formikProps.errors.numero_rccm_ifu}</div>}
                     </div>
-                    <button type="button" className="w-full bg-blue-700 text-white font-semibold py-2 rounded-md hover:bg-blue-800 transition mt-6" onClick={() => handleNextStep({ values, setFieldTouched })}>Suivant</button>
+                    <button type="button" className="w-full bg-blue-700 text-white font-semibold py-2 rounded-md hover:bg-blue-800 transition mt-6" onClick={() => handleNextStep(formikProps)}>Suivant</button>
                   </motion.div>
                 )}
 
                 {/* Step 2 */}
                 {step === 2 && (
                   <motion.div key="step2" initial="initial" animate="animate" exit="exit" variants={stepVariants} transition={{ duration: 0.4 }} className="space-y-4">
-                    <h2 className="text-black font-semibold text-xl">Contacts de l'entreprise</h2>
+                    <h2 className="text-black font-semibold text-xl"><span className="text-blue-700">Etape2:</span>Contacts de l'entreprise</h2>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Contact entreprise *</label>
                       <Field name="telephone_entreprise" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {touched.telephone_entreprise && errors.telephone_entreprise && <div className="text-red-500 text-sm mt-1">{errors.telephone_entreprise}</div>}
+                      {formikProps.touched.telephone_entreprise && formikProps.errors.telephone_entreprise && <div className="text-red-500 text-sm mt-1">{formikProps.errors.telephone_entreprise}</div>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">WhatsApp entreprise *</label>
                       <Field name="whatsapp_entreprise" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {touched.whatsapp_entreprise && errors.whatsapp_entreprise && <div className="text-red-500 text-sm mt-1">{errors.whatsapp_entreprise}</div>}
+                      {formikProps.touched.whatsapp_entreprise && formikProps.errors.whatsapp_entreprise && <div className="text-red-500 text-sm mt-1">{formikProps.errors.whatsapp_entreprise}</div>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Email entreprise *</label>
                       <Field type="email" name="email_entreprise" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {touched.email_entreprise && errors.email_entreprise && <div className="text-red-500 text-sm mt-1">{errors.email_entreprise}</div>}
+                      {formikProps.touched.email_entreprise && formikProps.errors.email_entreprise && <div className="text-red-500 text-sm mt-1">{formikProps.errors.email_entreprise}</div>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Site Internet</label>
                       <Field type="url" name="site_internet" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {touched.site_internet && errors.site_internet && <div className="text-red-500 text-sm mt-1">{errors.site_internet}</div>}
+                      {formikProps.touched.site_internet && formikProps.errors.site_internet && <div className="text-red-500 text-sm mt-1">{formikProps.errors.site_internet}</div>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">LinkedIn</label>
                       <Field type="url" name="linkedin" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {touched.linkedin && errors.linkedin && <div className="text-red-500 text-sm mt-1">{errors.linkedin}</div>}
+                      {formikProps.touched.linkedin && formikProps.errors.linkedin && <div className="text-red-500 text-sm mt-1">{formikProps.errors.linkedin}</div>}
                     </div>
                     <div className="flex gap-2">
                       <button type="button" className="flex-1 bg-gray-400 text-white font-semibold py-2 rounded-md hover:bg-gray-500 transition" onClick={() => setStep(1)}>Précédent</button>
-                      <button type="button" className="flex-1 bg-blue-700 text-white font-semibold py-2 rounded-md hover:bg-blue-800 transition" onClick={() => handleNextStep({ values, setFieldTouched })}>Suivant</button>
+                      <button type="button" className="flex-1 bg-blue-700 text-white font-semibold py-2 rounded-md hover:bg-blue-800 transition" onClick={() => handleNextStep(formikProps)}>Suivant</button>
                     </div>
                   </motion.div>
                 )}
@@ -223,25 +262,25 @@ const InscriptionEntreprise = () => {
                 {/* Step 3 */}
                 {step === 3 && (
                   <motion.div key="step3" initial="initial" animate="animate" exit="exit" variants={stepVariants} transition={{ duration: 0.4 }} className="space-y-4">
-                    <h2 className="text-black font-semibold text-xl">Informations du responsable</h2>
+                    <h2 className="text-black font-semibold text-xl"><span className="text-blue-700">Etape3:</span>Informations du responsable</h2>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Prénom *</label>
                       <Field name="prenom_responsable" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {touched.prenom_responsable && errors.prenom_responsable && <div className="text-red-500 text-sm mt-1">{errors.prenom_responsable}</div>}
+                      {formikProps.touched.prenom_responsable && formikProps.errors.prenom_responsable && <div className="text-red-500 text-sm mt-1">{formikProps.errors.prenom_responsable}</div>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Nom *</label>
                       <Field name="nom_responsable" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {touched.nom_responsable && errors.nom_responsable && <div className="text-red-500 text-sm mt-1">{errors.nom_responsable}</div>}
+                      {formikProps.touched.nom_responsable && formikProps.errors.nom_responsable && <div className="text-red-500 text-sm mt-1">{formikProps.errors.nom_responsable}</div>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Email professionnel *</label>
                       <Field type="email" name="email_responsable" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {touched.email_responsable && errors.email_responsable && <div className="text-red-500 text-sm mt-1">{errors.email_responsable}</div>}
+                      {formikProps.touched.email_responsable && formikProps.errors.email_responsable && <div className="text-red-500 text-sm mt-1">{formikProps.errors.email_responsable}</div>}
                     </div>
                     <div className="flex gap-2">
                       <button type="button" className="flex-1 bg-gray-400 text-white font-semibold py-2 rounded-md hover:bg-gray-500 transition" onClick={() => setStep(2)}>Précédent</button>
-                      <button type="button" className="flex-1 bg-blue-700 text-white font-semibold py-2 rounded-md hover:bg-blue-800 transition" onClick={() => handleNextStep({ values, setFieldTouched })}>Suivant</button>
+                      <button type="button" className="flex-1 bg-blue-700 text-white font-semibold py-2 rounded-md hover:bg-blue-800 transition" onClick={() => handleNextStep(formikProps)}>Suivant</button>
                     </div>
                   </motion.div>
                 )}
@@ -249,20 +288,22 @@ const InscriptionEntreprise = () => {
                 {/* Step 4 */}
                 {step === 4 && (
                   <motion.div key="step4" initial="initial" animate="animate" exit="exit" variants={stepVariants} transition={{ duration: 0.4 }} className="space-y-4">
-                    <h2 className="text-black font-semibold text-xl">Sécurité du compte</h2>
+                    <h2 className="text-black font-semibold text-xl"><span className="text-blue-700">Etape4:</span>Sécurité du compte</h2>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Mot de passe *</label>
-                      <Field type="password" name="mot_de_passe" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {touched.mot_de_passe && errors.mot_de_passe && <div className="text-red-500 text-sm mt-1">{errors.mot_de_passe}</div>}
+                      <Field type="password" name="password" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      {formikProps.touched.password && formikProps.errors.password && <div className="text-red-500 text-sm mt-1">{formikProps.errors.password}</div>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Confirmer le mot de passe *</label>
-                      <Field type="password" name="confirm_password" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      {touched.confirm_password && errors.confirm_password && <div className="text-red-500 text-sm mt-1">{errors.confirm_password}</div>}
+                      <Field type="password" name="confirmPassword" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      {formikProps.touched.confirmPassword && formikProps.errors.confirmPassword && <div className="text-red-500 text-sm mt-1">{formikProps.errors.confirmPassword}</div>}
                     </div>
                     <div className="flex gap-2">
                       <button type="button" className="flex-1 bg-gray-400 text-white font-semibold py-2 rounded-md hover:bg-gray-500 transition" onClick={() => setStep(3)}>Précédent</button>
-                      <button type="button" className="flex-1 bg-blue-800 text-white font-semibold py-2 rounded-md hover:bg-blue-900 transition" onClick={() => handleNextStep({ values, setFieldTouched })}>S'inscrire</button>
+                      <button type="submit" className="flex-1 bg-blue-800 text-white font-semibold py-2 rounded-md hover:bg-blue-900 transition" onClick={() => handleSubmit(formikProps.values)}>
+                        {formikProps.isSubmitting ? 'Inscription en cours ...' : 'S\'inscrire'}
+                      </button>
                     </div>
                   </motion.div>
                 )}

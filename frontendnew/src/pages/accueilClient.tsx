@@ -8,7 +8,7 @@ const AccueilClient  = () => {
       <p className="max-w-xl xl:max-w-2xl mx-auto text-lg lg:text-xl ">ClientHub est la plateforme qui reçoit vos commandes, recommandations ou critiques sur notre service, des demandes de réclamation et répond à vos préoccupations concernant nos services.</p>
       <button className="bg-blue-800  px-4 py-2 rounded text-white font-semibold text-lg flex items-center space-x-2">
         <Rocket size={20}/>
-        <Link to="/inscriptionclient">Commencer gratuitement</Link>
+        <Link to="/inscriptionclient">Commencer maintenant</Link>
       </button>
     </div>
   );
