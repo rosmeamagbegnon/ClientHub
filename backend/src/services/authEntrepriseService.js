@@ -174,27 +174,20 @@ export const registerEntreprise = async (data) => {
   const { password } = data;
 
   // 2. Créer l'entreprise directement
-  // Le modèle gère les conflits via les contraintes UNIQUE PostgreSQL et le catch
-  // IMPORTANT : Aucune vérification préalable - PostgreSQL gère tout
+  // Le modèle gère les conflits via ON CONFLICT DO NOTHING et les contraintes UNIQUE PostgreSQL
+  // IMPORTANT : Aucune vérification préalable - PostgreSQL gère tout de manière atomique
   try {
-    console.log("🔵 [DEBUG] Tentative de création entreprise:", {
-      nom_entreprise: data.nom_entreprise,
-      email_entreprise: data.email_entreprise,
-      numero_rccm_ifu: data.numero_rccm_ifu,
-    });
-    
     const entreprise = await entrepriseModel.createEntreprise({
       ...data,
       mot_de_passe: password,
     });
 
-    console.log("✅ [DEBUG] Entreprise créée avec succès:", {
-      id: entreprise?.id,
-      nom_entreprise: entreprise?.nom_entreprise,
-    });
-
-    if (!entreprise) {
-      console.error("❌ [DEBUG] createEntreprise a retourné null/undefined");
+    // Vérification robuste : entreprise doit exister et avoir un id
+    if (!entreprise || !entreprise.id) {
+      console.error("❌ Erreur : entreprise créée mais données invalides", {
+        entreprise,
+        hasId: !!(entreprise && entreprise.id),
+      });
       throw new ApiError("Erreur lors de la création de l'entreprise", 500);
     }
 
@@ -205,9 +198,8 @@ export const registerEntreprise = async (data) => {
       userType: "entreprise_crm",
     });
 
-    console.log("✅ [DEBUG] Token généré, retour du résultat");
     return {
-      entreprise: {
+      user: {
         id: entreprise.id,
         nom_entreprise: entreprise.nom_entreprise,
         email_entreprise: entreprise.email_entreprise,
@@ -220,14 +212,6 @@ export const registerEntreprise = async (data) => {
   } catch (error) {
     // IMPORTANT : Si on arrive ici, l'INSERT a ÉCHOUÉ dans le modèle
     // Le compte n'est PAS créé dans la base de données
-    
-    console.error("❌ [DEBUG] Erreur dans registerEntreprise:", {
-      errorType: error.constructor.name,
-      isApiError: error instanceof ApiError,
-      message: error.message,
-      code: error.code,
-      constraint: error.constraint,
-    });
     
     // Les erreurs de contrainte unique sont déjà transformées en ApiError par le modèle
     // On les relance telles quelles (elles ont déjà le bon message)
@@ -295,7 +279,7 @@ export const loginEntreprise = async (email, password) => {
   });
 
   return {
-    entreprise: {
+    user: {
       id: entreprise.id,
       nom_entreprise: entreprise.nom_entreprise,
       email_entreprise: entreprise.email_entreprise,

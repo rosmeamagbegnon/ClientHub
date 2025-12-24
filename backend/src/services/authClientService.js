@@ -99,7 +99,7 @@ export const registerParticulier = async (data) => {
     });
 
     return {
-      client: {
+      user: {
         id: client.id,
         prenom: client.prenom,
         nom: client.nom,
@@ -225,7 +225,7 @@ export const registerEntreprise = async (data) => {
     });
 
     return {
-      client: {
+      user: {
         id: client.id,
         prenom: client.prenom,
         nom: client.nom,
@@ -301,7 +301,7 @@ export const loginClient = async (email, password) => {
   });
 
   return {
-    client: {
+    user: {
       id: client.id,
       prenom: client.prenom,
       nom: client.nom,

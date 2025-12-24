@@ -37,6 +37,7 @@ import FloatingChat from './components/floatingChat';
 import BonusEntreprise from './pages/bonusEntreprise';
 import ListeEmployes from './pages/listeEmployes';
 import ProfilEmploye from './pages/profilEmploye';
+import UserTypeSelector from './components/UserTypeSelector';
 
 // Layout qui choisit la navbar en fonction de la route
 function Layout({ children }: { children: React.ReactNode }) {
@@ -99,7 +100,7 @@ const showFloatingChat = showDashboardButtonRoutes.some(route =>
   else if (entrepriseRoutes.some(route => location.pathname.startsWith(route))) {
     navbarToShow = <SidebarEntreprise />;
   }
-  else if (location.pathname === "/") {
+  else if (location.pathname === "/" || location.pathname === "/choisir-type") {
     navbarToShow = <Navbar2 />;
   }
   else if (entrepriseAuthRoutes.includes(location.pathname)) {
@@ -129,6 +130,7 @@ function App() {
           <Routes>
             {/* ROUTES PUBLIQUES */}
             <Route path="/" element={<Landing />} />
+            <Route path="/choisir-type" element={<UserTypeSelector />} />
             <Route path="/inscriptionclient" element={<InscriptionClient />} />
             <Route path="/connexionclient" element={<ConnexionClient />} />
             <Route path="/connexionentreprise" element={<ConnexionEntreprise />} />

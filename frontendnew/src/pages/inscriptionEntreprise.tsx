@@ -162,9 +162,17 @@ const InscriptionEntreprise = () => {
   const navigate = useNavigate();
   const { registerEntreprise } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (values: typeof initialValues) => {
+    // Protection contre la double soumission
+    if (isSubmitting) {
+      return;
+    }
+
     setError(null);
+    setIsSubmitting(true);
+    
     try {
       // Utiliser le service d'authentification du contexte
       // Le service gère automatiquement la transformation des données
@@ -192,6 +200,8 @@ const InscriptionEntreprise = () => {
       // Afficher un message d'erreur utilisateur-friendly
       const errorMessage = handleApiError(err, "Une erreur est survenue lors de l'inscription");
       setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -341,9 +351,21 @@ const InscriptionEntreprise = () => {
                       {formikProps.touched.confirmPassword && formikProps.errors.confirmPassword && <div className="text-red-500 text-sm mt-1">{formikProps.errors.confirmPassword}</div>}
                     </div>
                     <div className="flex gap-2">
-                      <button type="button" className="flex-1 bg-gray-400 text-white font-semibold py-2 rounded-md hover:bg-gray-500 transition" onClick={() => setStep(3)}>Précédent</button>
-                      <button type="submit" className="flex-1 bg-blue-800 text-white font-semibold py-2 rounded-md hover:bg-blue-900 transition" onClick={() => handleSubmit(formikProps.values)}>
-                        {formikProps.isSubmitting ? 'Inscription en cours ...' : 'S\'inscrire'}
+                      <button 
+                        type="button" 
+                        className="flex-1 bg-gray-400 text-white font-semibold py-2 rounded-md hover:bg-gray-500 transition disabled:opacity-50 disabled:cursor-not-allowed" 
+                        onClick={() => setStep(3)}
+                        disabled={isSubmitting}
+                      >
+                        Précédent
+                      </button>
+                      <button 
+                        type="submit" 
+                        className="flex-1 bg-blue-800 text-white font-semibold py-2 rounded-md hover:bg-blue-900 transition disabled:opacity-50 disabled:cursor-not-allowed" 
+                        onClick={() => handleSubmit(formikProps.values)}
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? 'Inscription en cours...' : 'S\'inscrire'}
                       </button>
                     </div>
                   </motion.div>

@@ -50,14 +50,14 @@ const Navbar2: React.FC = () => {
         {/* Desktop Buttons */}
         <div className="hidden lg:flex items-center gap-4">
           <Link
-            to="/inscriptionentreprise"
+            to="/choisir-type?action=register"
             className="bg-gray-800 text-white px-4 py-2 rounded"
           >
             Commencer gratuitement
           </Link>
 
           <Link
-            to="/connexionentreprise"
+            to="/choisir-type?action=login"
             className="bg-blue-800 text-white px-4 py-2 rounded"
           >
             Se connecter
@@ -102,14 +102,14 @@ const Navbar2: React.FC = () => {
           </li>
 
           <Link
-            to="/inscriptionentreprise"
+            to="/choisir-type?action=register"
             className="bg-gray-800 text-white px-4 py-2 rounded"
           >
             Commencer gratuitement
           </Link>
 
           <Link
-            to="/connexionentreprise"
+            to="/choisir-type?action=login"
             className="bg-blue-800 text-white px-4 py-2 rounded"
           >
             Se connecter

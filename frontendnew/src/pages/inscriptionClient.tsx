@@ -410,28 +410,34 @@ const InscriptionClient = () => {
                       <ErrorMessage name="confirmPassword" component="div" className="text-red-500 text-sm mt-1" />
                     </div>
                     <div className="flex gap-2">
-                      <button type="button" className="flex-1 bg-gray-400 text-white font-semibold py-2 rounded-md hover:bg-gray-500 transition" onClick={() => {
-                        if (clientType === "entreprise") {
-                          setStep(2);
-                        } else {
-                          setStep(1);
-                        }
+                      <button 
+                        type="button" 
+                        className="flex-1 bg-gray-400 text-white font-semibold py-2 rounded-md hover:bg-gray-500 transition disabled:opacity-50 disabled:cursor-not-allowed" 
+                        onClick={() => {
+                          if (clientType === "entreprise") {
+                            setStep(2);
+                          } else {
+                            setStep(1);
+                          }
                         }}
-                        >Précédent
+                        disabled={isSubmitting}
+                      >
+                        Précédent
                       </button>
                       <button
-                      type="button"
-                      className="flex-1 bg-blue-700 text-white font-semibold py-2 rounded-md hover:bg-blue-800 transition"
-                      onClick={() =>
-                        stepFinalPasswordSchema.validate(values, { abortEarly: false }).then(() => {
-                          const form = document.querySelector("form");
-                          if (form) {
-                            form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
-                          }
-                        }).catch(() => {})
-                      }
+                        type="button"
+                        className="flex-1 bg-blue-700 text-white font-semibold py-2 rounded-md hover:bg-blue-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() =>
+                          stepFinalPasswordSchema.validate(values, { abortEarly: false }).then(() => {
+                            const form = document.querySelector("form");
+                            if (form) {
+                              form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+                            }
+                          }).catch(() => {})
+                        }
+                        disabled={isSubmitting}
                       >
-                        S'inscrire
+                        {isSubmitting ? 'Inscription en cours...' : 'S\'inscrire'}
                       </button>                    
                     </div>
                     

@@ -81,7 +81,7 @@ export default function Landing() {
             ClientHub vous aide à suivre prospects, opportunités et tickets en un seul endroit.
           </p>
           <div className="flex flex-wrap justify-center items-center gap-4">
-            <Link to="/inscriptionentreprise">
+            <Link to="/choisir-type?action=register">
                 <button className="bg-blue-800 text-white px-5 py-2 rounded">
                     Essayer gratuitement
                 </button>
@@ -193,7 +193,7 @@ export default function Landing() {
             Essayez ClientHub gratuitement pendant 14 jours — sans carte bancaire.
         </p>
 
-        <Link to="/inscriptionentreprise" className="relative z-10">
+        <Link to="/choisir-type?action=register" className="relative z-10">
             <button className="bg-white font-semibold text-blue-800 px-10 py-4 rounded-2xl hover:scale-105 transition-transform duration-300 shadow-lg">
             Commencer maintenant
             </button>
