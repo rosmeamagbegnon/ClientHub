@@ -1,5 +1,17 @@
+/**
+ * Application principale
+ * 
+ * CORRECTION EFFECTUÉE :
+ * - Ajout du AuthProvider pour gérer l'état d'authentification global
+ * - Protection des routes avec ProtectedRoute
+ * - Routes client protégées pour les clients uniquement
+ * - Routes entreprise protégées pour les entreprises uniquement
+ */
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import AccueilClient from './pages/accueilClient';
 import InscriptionClient from './pages/inscriptionClient';
 import ConnexionClient from './pages/connexionClient';
@@ -111,35 +123,128 @@ const showFloatingChat = showDashboardButtonRoutes.some(route =>
 
 function App() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          {/* CLIENT */}
-          <Route path="/portailclient" element={<AccueilClient />} />
-          <Route path="/inscriptionclient" element={<InscriptionClient />} />
-          <Route path="/connexionclient" element={<ConnexionClient />} />
-          <Route path="/dashboardclient" element={<DashboardClient />} />
-          <Route path="/ticketsclient" element={<TicketsClient />} />
-          <Route path="/commandesclient" element={<CommandesClient />} />
-          <Route path="/bonusclient" element={<BonusClient />} />
-          <Route path="/profilclient" element={<ProfilClient />} />
+    <AuthProvider>
+      <Router>
+        <Layout>
+          <Routes>
+            {/* ROUTES PUBLIQUES */}
+            <Route path="/" element={<Landing />} />
+            <Route path="/inscriptionclient" element={<InscriptionClient />} />
+            <Route path="/connexionclient" element={<ConnexionClient />} />
+            <Route path="/connexionentreprise" element={<ConnexionEntreprise />} />
+            <Route path="/inscriptionentreprise" element={<InscriptionEntreprise />} />
 
-          {/* ENTREPRISE */}
-          <Route path="/dashboardentreprise" element={<DashboardEntreprise />} />
-          <Route path="/clientsentreprise" element={<ClientsEntreprise />} />
-          <Route path="/ticketsentreprise" element={<TicketsEntreprise />} />
-          <Route path="/opportunites" element={<Opportunites />} />
-          <Route path="/bonusentreprise" element={<BonusEntreprise />} />
-          <Route path="/listeemployes" element={<ListeEmployes />} />
-          <Route path="/profilemploye" element={<ProfilEmploye />} />
+            {/* ROUTES CLIENT PROTÉGÉES */}
+            <Route
+              path="/portailclient"
+              element={
+                <ProtectedRoute requiredUserType="client">
+                  <AccueilClient />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboardclient"
+              element={
+                <ProtectedRoute requiredUserType="client">
+                  <DashboardClient />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ticketsclient"
+              element={
+                <ProtectedRoute requiredUserType="client">
+                  <TicketsClient />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/commandesclient"
+              element={
+                <ProtectedRoute requiredUserType="client">
+                  <CommandesClient />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bonusclient"
+              element={
+                <ProtectedRoute requiredUserType="client">
+                  <BonusClient />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profilclient"
+              element={
+                <ProtectedRoute requiredUserType="client">
+                  <ProfilClient />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* PUBLIC */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/connexionentreprise" element={<ConnexionEntreprise />} />
-          <Route path="/inscriptionentreprise" element={<InscriptionEntreprise />} />
-        </Routes>
-      </Layout>
-    </Router>
+            {/* ROUTES ENTREPRISE PROTÉGÉES */}
+            <Route
+              path="/dashboardentreprise"
+              element={
+                <ProtectedRoute requiredUserType="entreprise">
+                  <DashboardEntreprise />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clientsentreprise"
+              element={
+                <ProtectedRoute requiredUserType="entreprise">
+                  <ClientsEntreprise />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ticketsentreprise"
+              element={
+                <ProtectedRoute requiredUserType="entreprise">
+                  <TicketsEntreprise />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/opportunites"
+              element={
+                <ProtectedRoute requiredUserType="entreprise">
+                  <Opportunites />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bonusentreprise"
+              element={
+                <ProtectedRoute requiredUserType="entreprise">
+                  <BonusEntreprise />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/listeemployes"
+              element={
+                <ProtectedRoute requiredUserType="entreprise">
+                  <ListeEmployes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profilemploye"
+              element={
+                <ProtectedRoute requiredUserType="entreprise">
+                  <ProfilEmploye />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </Layout>
+      </Router>
+    </AuthProvider>
   );
 }
 

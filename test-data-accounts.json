@@ -1,0 +1,120 @@
+{
+  "clients_particuliers": [
+    {
+      "prenom": "Koffi",
+      "nom": "Adjanohoun",
+      "email": "koffi.adjanohoun@example.com",
+      "telephone": "+22968123456",
+      "canal_contact": "whatsapp",
+      "password": "SecurePass123!",
+      "confirmPassword": "SecurePass123!"
+    },
+    {
+      "prenom": "Marie",
+      "nom": "Soglo",
+      "email": "marie.soglo@example.com",
+      "telephone": "+22970123456",
+      "canal_contact": "email",
+      "password": "MySecure2024!",
+      "confirmPassword": "MySecure2024!"
+    },
+    {
+      "prenom": "Jean",
+      "nom": "Boko",
+      "email": "jean.boko@example.com",
+      "telephone": "+22969123456",
+      "canal_contact": "sms",
+      "password": "Password123@",
+      "confirmPassword": "Password123@"
+    }
+  ],
+  "clients_entreprises": [
+    {
+      "prenom": "Sébastien",
+      "nom": "Kouassi",
+      "email": "sebastien.kouassi@techstart.bj",
+      "password": "TechStart2024!",
+      "confirmPassword": "TechStart2024!",
+      "nom_entreprise": "TechStart Bénin SA",
+      "secteur_activite": "Technologie",
+      "taille_entreprise": "1 - 10 employés",
+      "numero_rccm": "BJ-2024-TECH-001",
+      "poste_occupe": "Directeur Technique",
+      "adresse_physique": "123 Avenue de la République, Cotonou",
+      "email_professionnel": "contact@techstart.bj",
+      "telephone_entreprise": "+22921234567",
+      "site_internet": "https://www.techstart.bj",
+      "linkedin": "https://linkedin.com/company/techstart-benin"
+    },
+    {
+      "prenom": "Fatou",
+      "nom": "Traoré",
+      "email": "fatou.traore@commercesa.bj",
+      "password": "Commerce2024!",
+      "confirmPassword": "Commerce2024!",
+      "nom_entreprise": "Commerce SA",
+      "secteur_activite": "Commerce",
+      "taille_entreprise": "11 - 50 employés",
+      "numero_rccm": "BJ-2023-COMM-045",
+      "poste_occupe": "Directrice Commerciale",
+      "adresse_physique": "456 Boulevard de la Paix, Porto-Novo",
+      "email_professionnel": "info@commercesa.bj",
+      "telephone_entreprise": "+22921345678",
+      "site_internet": "https://www.commercesa.bj",
+      "linkedin": "https://linkedin.com/company/commercesa"
+    }
+  ],
+  "entreprises_crm": [
+    {
+      "nom_entreprise": "Digital Solutions Bénin SARL",
+      "secteur_activite": "Technologie",
+      "taille_entreprise": "11 - 50 employés",
+      "numero_rccm_ifu": "BJ-2021-DIGI-089",
+      "email_entreprise": "contact@digitalsolutions.bj",
+      "telephone_entreprise": "+22921678901",
+      "whatsapp_entreprise": "+22967654321",
+      "adresse_professionnelle": "Immeuble Tech Hub, 1er étage, Cotonou",
+      "site_internet": "https://www.digitalsolutions.bj",
+      "linkedin": "https://linkedin.com/company/digital-solutions-benin",
+      "prenom_responsable": "David",
+      "nom_responsable": "Gbedo",
+      "email_responsable": "david.gbedo@digitalsolutions.bj",
+      "password": "DigitalCRM2024!",
+      "confirmPassword": "DigitalCRM2024!"
+    },
+    {
+      "nom_entreprise": "E-Commerce Pro Bénin",
+      "secteur_activite": "Commerce",
+      "taille_entreprise": "51 - 200 employés",
+      "numero_rccm_ifu": "BJ-2020-ECO-156",
+      "email_entreprise": "info@ecommercepro.bj",
+      "telephone_entreprise": "+22921789012",
+      "whatsapp_entreprise": "+22967543210",
+      "adresse_professionnelle": "Zone Industrielle, Lot 45, Cotonou",
+      "site_internet": "https://www.ecommercepro.bj",
+      "linkedin": "https://linkedin.com/company/ecommerce-pro-benin",
+      "prenom_responsable": "Aicha",
+      "nom_responsable": "Moussa",
+      "email_responsable": "aicha.moussa@ecommercepro.bj",
+      "password": "EcomCRM2024!",
+      "confirmPassword": "EcomCRM2024!"
+    },
+    {
+      "nom_entreprise": "LogiTrans Bénin",
+      "secteur_activite": "Transport & Logistique",
+      "taille_entreprise": "201 - 500 employés",
+      "numero_rccm_ifu": "BJ-2019-LOGI-234",
+      "email_entreprise": "contact@logitrans.bj",
+      "telephone_entreprise": "+22921890123",
+      "whatsapp_entreprise": "+22967432109",
+      "adresse_professionnelle": "Gare Routière, Porte 12, Cotonou",
+      "site_internet": "https://www.logitrans.bj",
+      "linkedin": "https://linkedin.com/company/logitrans-benin",
+      "prenom_responsable": "Moussa",
+      "nom_responsable": "Diallo",
+      "email_responsable": "moussa.diallo@logitrans.bj",
+      "password": "LogiTrans2024!",
+      "confirmPassword": "LogiTrans2024!"
+    }
+  ]
+}

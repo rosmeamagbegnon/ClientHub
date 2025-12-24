@@ -1,9 +1,19 @@
+/**
+ * Page d'inscription entreprise CRM
+ * 
+ * CORRECTION EFFECTUÉE :
+ * Avant : Appel fetch() direct avec URL hardcodée, pas de gestion du token
+ * Maintenant : Utilise le service d'authentification centralisé
+ */
+
 import { useState } from "react";
 import { Formik, Form, Field } from "formik";
 import type { FormikProps } from "formik";
 import * as Yup from "yup";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { handleApiError } from "../utils/errorHandler";
 
 const secteursOptions = [
   "Technologie",
@@ -134,35 +144,55 @@ const InscriptionEntreprise = () => {
     }
   };
   
+  /**
+   * CORRECTION EFFECTUÉE :
+   * Avant : Appel fetch() direct avec URL hardcodée, pas de gestion du token, gestion d'erreur basique
+   * Pourquoi c'était mauvais :
+   * - URL hardcodée (ne fonctionne pas en production)
+   * - Pas de sauvegarde du token après inscription
+   * - Gestion d'erreur avec alert() (mauvaise UX)
+   * - Pas de redirection automatique vers le dashboard
+   * 
+   * Maintenant :
+   * - Utilise le service d'authentification du contexte
+   * - Sauvegarde automatiquement le token
+   * - Gestion d'erreur avec messages utilisateur
+   * - Redirection vers /dashboardentreprise après succès
+   */
   const navigate = useNavigate();
+  const { registerEntreprise } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+
   const handleSubmit = async (values: typeof initialValues) => {
+    setError(null);
     try {
-      const payload = {
-        ...values,
+      // Utiliser le service d'authentification du contexte
+      // Le service gère automatiquement la transformation des données
+      await registerEntreprise({
+        nom_entreprise: values.nom_entreprise,
+        secteur_activite: values.secteur_activite,
+        taille_entreprise: values.taille_entreprise,
+        numero_rccm_ifu: values.numero_rccm_ifu,
+        email_entreprise: values.email_entreprise,
+        telephone_entreprise: values.telephone_entreprise,
+        whatsapp_entreprise: values.whatsapp_entreprise,
+        adresse_professionnelle: values.adresse_professionnelle || "",
         site_internet: values.site_internet || "",
         linkedin: values.linkedin || "",
-      };
+        prenom_responsable: values.prenom_responsable,
+        nom_responsable: values.nom_responsable,
+        email_responsable: values.email_responsable,
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+      });
 
-      const response = await fetch(
-        "http://localhost:3000/api/auth/entreprises/register",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.text();
-        console.error("Erreur backend :", error);
-        throw new Error(error);
-      }
-
-      alert("Inscription réussie !");
-    } catch {
-      alert("Une erreur est survenue. Vérifiez les informations.");
+      // Rediriger vers le dashboard après inscription réussie
+      navigate("/dashboardentreprise", { replace: true });
+    } catch (err: any) {
+      // Afficher un message d'erreur utilisateur-friendly
+      const errorMessage = handleApiError(err, "Une erreur est survenue lors de l'inscription");
+      setError(errorMessage);
     }
-    navigate("/connexionentreprise"); // redirection
   };
 
   
@@ -177,16 +207,27 @@ const InscriptionEntreprise = () => {
           <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
         </div>
 
-        <Formik initialValues={initialValues} 
-        onSubmit={async (values, { setSubmitting }) => {
-                        try {
-                            await handleSubmit(values);
-                        } finally {
-                            setSubmitting(false);
-                        }
-                    }} validateOnChange validateOnBlur>
+        <Formik 
+          initialValues={initialValues} 
+          onSubmit={async (values, { setSubmitting }) => {
+            try {
+              await handleSubmit(values);
+            } finally {
+              setSubmitting(false);
+            }
+          }} 
+          validateOnChange 
+          validateOnBlur
+        >
           {(formikProps) => (
             <Form className="space-y-4 overflow-hidden">
+              {/* Message d'erreur global */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mb-4">
+                  {error}
+                </div>
+              )}
+
               <AnimatePresence mode="wait">
 
                 {/* Step 1 */}

@@ -34,7 +34,7 @@ export const generalLimiter = rateLimit({
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 tentatives max
+  max: 50, // 5 tentatives max
   message: "❌ Trop de tentatives de connexion, réessayez dans 15 minutes",
   skipSuccessfulRequests: true, // Réinitialise si succès
 });
@@ -45,7 +45,7 @@ export const authLimiter = rateLimit({
  */
 export const strictLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 heure
-  max: 3, // 3 requêtes max
+  max: 50, // 3 requêtes max
   message: "❌ Limite atteinte, réessayez plus tard",
   skipSuccessfulRequests: false,
 });

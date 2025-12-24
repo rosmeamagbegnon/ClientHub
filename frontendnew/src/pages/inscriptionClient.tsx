@@ -1,7 +1,27 @@
+/**
+ * Page d'inscription client
+ * 
+ * CORRECTION EFFECTUÉE :
+ * Avant : Aucun appel API, juste un console.log() et un alert()
+ * Pourquoi c'était mauvais :
+ * - Aucune inscription réelle
+ * - Pas de création de compte
+ * - Pas de gestion d'erreur
+ * 
+ * Maintenant :
+ * - Utilise le service d'authentification
+ * - Appel API réel selon le type de client (particulier ou entreprise)
+ * - Gestion d'erreur avec messages utilisateur
+ * - Redirection vers /dashboardclient après succès
+ */
+
 import { useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { handleApiError } from "../utils/errorHandler";
 
 const secteursOptions = [
   "Technologie",
@@ -31,6 +51,9 @@ const stepVariants = {
 const InscriptionClient = () => {
   const [clientType, setClientType] = useState("particulier");
   const [step, setStep] = useState(1);
+  const navigate = useNavigate();
+  const { registerClientParticulier, registerClientEntreprise } = useAuth();
+  const [error, setError] = useState<string | null>(null);
 
   const initialValues = {
     prenom: "",
@@ -90,9 +113,48 @@ const InscriptionClient = () => {
       .required("Confirmez votre mot de passe"),
   });
 
-  const handleSubmit = (values: typeof initialValues) => {
-    console.log("Formulaire soumis :", values);
-    alert("Inscription réussie !");
+  const handleSubmit = async (values: typeof initialValues) => {
+    setError(null);
+    try {
+      if (clientType === "particulier") {
+        // Inscription client particulier
+        await registerClientParticulier({
+          prenom: values.prenom,
+          nom: values.nom,
+          email: values.email,
+          telephone: values.whatsappPersonnel,
+          canal_contact: values.canalContact as "email" | "whatsapp" | "sms",
+          password: values.password,
+          confirmPassword: values.confirmPassword,
+        });
+      } else {
+        // Inscription client entreprise
+        await registerClientEntreprise({
+          prenom: values.prenom,
+          nom: values.nom,
+          email: values.email,
+          password: values.password,
+          confirmPassword: values.confirmPassword,
+          nom_entreprise: values.nomEntreprise,
+          secteur_activite: values.secteurActivite,
+          taille_entreprise: values.tailleEntreprise,
+          numero_rccm: values.rccmIfu,
+          poste_occupe: values.poste,
+          adresse_physique: values.adresseProfessionnelle,
+          email_professionnel: values.adresseProfessionnelle,
+          telephone_entreprise: values.whatsappEntreprise,
+          site_internet: values.siteInternet,
+          linkedin: values.linkedin,
+        });
+      }
+
+      // Rediriger vers le dashboard après inscription réussie
+      navigate("/dashboardclient", { replace: true });
+    } catch (err: any) {
+      // Afficher un message d'erreur utilisateur-friendly
+      const errorMessage = handleApiError(err, "Une erreur est survenue lors de l'inscription");
+      setError(errorMessage);
+    }
   };
 
   const stepsTotal = clientType === "entreprise" ? 3 : 2;
@@ -126,6 +188,12 @@ const InscriptionClient = () => {
         >
           {({ values, validateForm, setFieldValue }) => (
             <Form className="space-y-4 overflow-hidden">
+              {/* Message d'erreur global */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mb-4">
+                  {error}
+                </div>
+              )}
                 
               <AnimatePresence mode="wait">
                 {/* ÉTAPE 1 */}

@@ -1,5 +1,6 @@
 import bcryptjs from "bcryptjs";
 import pool from "../config/database.js";
+import { ApiError } from "../utils/responseFormatter.js";
 
 /**
  * 📦 ENTREPRISE MODEL - Data Access Layer
@@ -42,6 +43,7 @@ export const createEntreprise = async (entrepriseData) => {
     const salt = await bcryptjs.genSalt(10);
     const mot_de_passe_hash = await bcryptjs.hash(mot_de_passe, salt);
 
+    // INSERT simple - PostgreSQL gère les contraintes UNIQUE automatiquement
     const query = `
       INSERT INTO entreprises (
         nom_entreprise,
@@ -62,7 +64,8 @@ export const createEntreprise = async (entrepriseData) => {
         date_creation
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW()
-      ) RETURNING 
+      )
+      RETURNING 
         id, 
         nom_entreprise, 
         secteur_activite, 
@@ -92,8 +95,58 @@ export const createEntreprise = async (entrepriseData) => {
     ];
 
     const result = await pool.query(query, values);
+
+    // IMPORTANT : Si on arrive ici, l'INSERT a RÉUSSI
+    // Le compte EST créé dans la base de données
+    if (!result.rows || result.rows.length === 0) {
+      // Cas improbable : INSERT réussi mais aucune ligne retournée
+      console.error("❌ INSERT réussi mais aucune ligne retournée");
+      throw new ApiError("Erreur lors de la création de l'entreprise", 500);
+    }
+
     return result.rows[0];
   } catch (error) {
+    // IMPORTANT : Cette erreur est levée SEULEMENT si l'INSERT échoue
+    // Si on arrive ici, l'INSERT a ÉCHOUÉ et aucune ligne n'a été insérée
+    // Le compte n'est PAS créé dans la base de données
+
+    // Logger l'erreur complète pour debugging
+    console.error("❌ Erreur lors de createEntreprise:", {
+      code: error.code,
+      constraint: error.constraint,
+      message: error.message,
+      detail: error.detail,
+    });
+
+    // Transformer les erreurs PostgreSQL de contrainte unique en ApiError avec messages clairs
+    if (error.code === "23505") {
+      // Erreur de contrainte unique - l'INSERT a ÉCHOUÉ
+      // Cela signifie qu'un doublon existe déjà dans la base
+      const constraint = error.constraint;
+
+      if (constraint === "entreprises_email_entreprise_key") {
+        throw new ApiError("Cet email entreprise est déjà utilisé", 409);
+      }
+      if (constraint === "entreprises_numero_rccm_ifu_key") {
+        throw new ApiError("Ce numéro RCCM/IFU est déjà utilisé", 409);
+      }
+      if (constraint === "entreprises_nom_entreprise_key") {
+        throw new ApiError("Ce nom d'entreprise est déjà utilisé", 409);
+      }
+
+      // Erreur de contrainte unique générique (si constraint est undefined ou autre)
+      console.error("❌ Contrainte unique inconnue:", constraint);
+      throw new ApiError(
+        "Cette ressource existe déjà dans la base de données",
+        409
+      );
+    }
+
+    // Pour les autres erreurs PostgreSQL, les logger et les relancer
+    console.error(
+      "❌ Erreur PostgreSQL inattendue lors de la création d'entreprise:",
+      error
+    );
     throw error;
   }
 };
@@ -102,12 +155,17 @@ export const createEntreprise = async (entrepriseData) => {
 
 /**
  * Trouve une entreprise par son email
- * @param {string} email - Email de l'entreprise
+ * @param {string} email - Email de l'entreprise (sera normalisé en lowercase)
  * @returns {Promise<Object|null>} Entreprise trouvée ou null
+ *
+ * IMPORTANT : Utilise LOWER() pour être insensible à la casse
  */
 export const findEntrepriseByEmail = async (email) => {
-  const query = "SELECT * FROM entreprises WHERE email_entreprise = $1";
-  const result = await pool.query(query, [email]);
+  // Normaliser l'email en lowercase pour la recherche
+  const emailNormalized = email.toLowerCase().trim();
+  const query =
+    "SELECT * FROM entreprises WHERE LOWER(email_entreprise) = LOWER($1)";
+  const result = await pool.query(query, [emailNormalized]);
   return result.rows[0] || null;
 };
 
@@ -145,23 +203,46 @@ export const findEntrepriseById = async (id) => {
 
 /**
  * Vérifie si un email est déjà utilisé
- * @param {string} email - Email à vérifier
+ * @param {string} email - Email à vérifier (sera normalisé en lowercase)
+ * @param {Object} [client] - Client de transaction optionnel (pour atomicité)
  * @returns {Promise<boolean>} true si email existe
+ *
+ * IMPORTANT : Utilise LOWER() pour être insensible à la casse
+ * Cela évite les doublons comme "Test@Example.com" vs "test@example.com"
  */
-export const emailExists = async (email) => {
-  const query = "SELECT id FROM entreprises WHERE email_entreprise = $1";
-  const result = await pool.query(query, [email]);
+export const emailExists = async (email, client = null) => {
+  // Normaliser l'email en lowercase pour la comparaison
+  const emailNormalized = email.toLowerCase().trim();
+  const query =
+    "SELECT id FROM entreprises WHERE LOWER(email_entreprise) = LOWER($1)";
+  const dbClient = client || pool;
+  const result = await dbClient.query(query, [emailNormalized]);
   return result.rows.length > 0;
 };
 
 /**
  * Vérifie si un RCCM/IFU est déjà utilisé
  * @param {string} numeroRccm - Numéro RCCM/IFU à vérifier
+ * @param {Object} [client] - Client de transaction optionnel (pour atomicité)
  * @returns {Promise<boolean>} true si RCCM existe
  */
-export const rcmmExists = async (numeroRccm) => {
+export const rcmmExists = async (numeroRccm, client = null) => {
   const query = "SELECT id FROM entreprises WHERE numero_rccm_ifu = $1";
-  const result = await pool.query(query, [numeroRccm]);
+  const dbClient = client || pool;
+  const result = await dbClient.query(query, [numeroRccm]);
+  return result.rows.length > 0;
+};
+
+/**
+ * Vérifie si un nom d'entreprise est déjà utilisé
+ * @param {string} nomEntreprise - Nom de l'entreprise à vérifier
+ * @param {Object} [client] - Client de transaction optionnel (pour atomicité)
+ * @returns {Promise<boolean>} true si nom existe
+ */
+export const nomEntrepriseExists = async (nomEntreprise, client = null) => {
+  const query = "SELECT id FROM entreprises WHERE nom_entreprise = $1";
+  const dbClient = client || pool;
+  const result = await dbClient.query(query, [nomEntreprise]);
   return result.rows.length > 0;
 };
 
@@ -297,6 +378,7 @@ export default {
   findEntrepriseById,
   emailExists,
   rcmmExists,
+  nomEntrepriseExists,
   verifyPassword,
   updateLastLogin,
   updateEntreprise,

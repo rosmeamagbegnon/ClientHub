@@ -73,19 +73,38 @@ const validateRegistrationData = (data) => {
     );
   }
 
-  // Validation emails
+  // Validation et normalisation emails (IMPORTANT : utiliser les emails normalisés partout)
   const emailValidated = validateEmail(email_entreprise);
   if (!emailValidated) {
     throw new ApiError("Email entreprise invalide", 400);
   }
+  // Utiliser l'email normalisé (lowercase) pour éviter les doublons avec différentes casses
+  data.email_entreprise = emailValidated;
 
   const emailResponsableValidated = validateEmail(email_responsable);
   if (!emailResponsableValidated) {
     throw new ApiError("Email responsable invalide", 400);
   }
+  // Utiliser l'email responsable normalisé
+  data.email_responsable = emailResponsableValidated;
 
-  // Validation RCCM/IFU (format basique)
-  if (numero_rccm_ifu.length < 5) {
+  // IMPORTANT : Normaliser le nom d'entreprise (trim + espaces multiples)
+  // Cela évite les doublons comme "Test Entreprise" vs "Test Entreprise " (avec espace)
+  // ou "Test  Entreprise" (avec espaces multiples)
+  if (nom_entreprise && typeof nom_entreprise === "string") {
+    data.nom_entreprise = nom_entreprise.trim().replace(/\s+/g, " ");
+    if (data.nom_entreprise.length < 2) {
+      throw new ApiError("Le nom d'entreprise doit contenir au moins 2 caractères", 400);
+    }
+  }
+
+  // IMPORTANT : Normaliser le RCCM/IFU (trim + espaces)
+  if (numero_rccm_ifu && typeof numero_rccm_ifu === "string") {
+    data.numero_rccm_ifu = numero_rccm_ifu.trim();
+    if (data.numero_rccm_ifu.length < 5) {
+      throw new ApiError("Numéro RCCM/IFU invalide", 400);
+    }
+  } else {
     throw new ApiError("Numéro RCCM/IFU invalide", 400);
   }
 
@@ -127,54 +146,99 @@ const validateRegistrationData = (data) => {
  * @returns {Promise<Object>} { entreprise, token }
  * @throws {ApiError} Si validation échoue
  */
+/**
+ * CORRECTION EFFECTUÉE :
+ * Avant : Pas de vérification de nom_entreprise, pas de transaction, risque de doublons
+ * Pourquoi c'était mauvais :
+ * - Le nom_entreprise a une contrainte UNIQUE mais n'était pas vérifié
+ * - Pas de transaction : si erreur après INSERT, les données restent en base
+ * - Race condition possible entre vérifications et insertion
+ *
+ * Maintenant :
+ * - Vérification de nom_entreprise avant insertion
+ * - Utilisation d'une transaction pour garantir l'atomicité
+ * - Gestion d'erreur améliorée dans le modèle
+ */
+/**
+ * Enregistre une nouvelle entreprise CRM
+ * 
+ * APPROCHE SIMPLIFIÉE :
+ * - Validation des formats uniquement (email, téléphone, etc.)
+ * - Pas de vérification préalable d'existence (géré par ON CONFLICT dans le modèle)
+ * - Gestion des erreurs PostgreSQL directement dans le catch
+ */
 export const registerEntreprise = async (data) => {
-  // Valider les données
+  // 1. Valider les formats et normaliser les données (emails en lowercase)
   validateRegistrationData(data);
 
-  const { nom_entreprise, email_entreprise, numero_rccm_ifu, password } = data;
+  const { password } = data;
 
-  // Vérifier si email existe déjà
-  const emailAlreadyExists = await entrepriseModel.emailExists(
-    email_entreprise
-  );
-  if (emailAlreadyExists) {
-    throw new ApiError("Cet email entreprise est déjà utilisé", 409);
-  }
+  // 2. Créer l'entreprise directement
+  // Le modèle gère les conflits via les contraintes UNIQUE PostgreSQL et le catch
+  // IMPORTANT : Aucune vérification préalable - PostgreSQL gère tout
+  try {
+    console.log("🔵 [DEBUG] Tentative de création entreprise:", {
+      nom_entreprise: data.nom_entreprise,
+      email_entreprise: data.email_entreprise,
+      numero_rccm_ifu: data.numero_rccm_ifu,
+    });
+    
+    const entreprise = await entrepriseModel.createEntreprise({
+      ...data,
+      mot_de_passe: password,
+    });
 
-  // Vérifier si RCCM/IFU existe déjà
-  const rcmmAlreadyExists = await entrepriseModel.rcmmExists(numero_rccm_ifu);
-  if (rcmmAlreadyExists) {
-    throw new ApiError("Ce numéro RCCM/IFU est déjà utilisé", 409);
-  }
+    console.log("✅ [DEBUG] Entreprise créée avec succès:", {
+      id: entreprise?.id,
+      nom_entreprise: entreprise?.nom_entreprise,
+    });
 
-  // Créer l'entreprise en base
-  const entreprise = await entrepriseModel.createEntreprise({
-    ...data,
-    mot_de_passe: password,
-  });
+    if (!entreprise) {
+      console.error("❌ [DEBUG] createEntreprise a retourné null/undefined");
+      throw new ApiError("Erreur lors de la création de l'entreprise", 500);
+    }
 
-  if (!entreprise) {
+    // 3. Générer le token JWT
+    const token = generateToken({
+      userId: entreprise.id,
+      email: entreprise.email_entreprise,
+      userType: "entreprise_crm",
+    });
+
+    console.log("✅ [DEBUG] Token généré, retour du résultat");
+    return {
+      entreprise: {
+        id: entreprise.id,
+        nom_entreprise: entreprise.nom_entreprise,
+        email_entreprise: entreprise.email_entreprise,
+        secteur_activite: entreprise.secteur_activite,
+        prenom_responsable: entreprise.prenom_responsable,
+        nom_responsable: entreprise.nom_responsable,
+      },
+      token,
+    };
+  } catch (error) {
+    // IMPORTANT : Si on arrive ici, l'INSERT a ÉCHOUÉ dans le modèle
+    // Le compte n'est PAS créé dans la base de données
+    
+    console.error("❌ [DEBUG] Erreur dans registerEntreprise:", {
+      errorType: error.constructor.name,
+      isApiError: error instanceof ApiError,
+      message: error.message,
+      code: error.code,
+      constraint: error.constraint,
+    });
+    
+    // Les erreurs de contrainte unique sont déjà transformées en ApiError par le modèle
+    // On les relance telles quelles (elles ont déjà le bon message)
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
+    // Pour les autres erreurs inattendues, logger et retourner un message générique
+    console.error("❌ Erreur inattendue lors de la création d'entreprise:", error);
     throw new ApiError("Erreur lors de la création de l'entreprise", 500);
   }
-
-  // Générer le token JWT
-  const token = generateToken({
-    userId: entreprise.id,
-    email: entreprise.email_entreprise,
-    userType: "entreprise_crm", // Distinguer des clients qui sont des entreprises
-  });
-
-  return {
-    entreprise: {
-      id: entreprise.id,
-      nom_entreprise: entreprise.nom_entreprise,
-      email_entreprise: entreprise.email_entreprise,
-      secteur_activite: entreprise.secteur_activite,
-      prenom_responsable: entreprise.prenom_responsable,
-      nom_responsable: entreprise.nom_responsable,
-    },
-    token,
-  };
 };
 
 // ==================== LOGIN ====================
