@@ -1,75 +1,87 @@
 // src/pages/TicketsClient.tsx
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, Loader2 } from "lucide-react";
 import ButtonTicket from "../components/buttonTicket";
-import DetailsTicket from "../components/detailsTicket"; // Import du modal
+import DetailsTicket from "../components/detailsTicket";
 import TicketStatusColor from "../config/ticketStatusColor";
-// --- Types ---
-export interface Ticket {
-  id: number;
-  title: string;
-  type: "facturation" | "reclamation" | "technique" | "suggestion" | "autre";
-  status:
-    | "En cours d'étude"
-    | "Rejetée"
-    | "Acceptée"
-    | "Assignée"
-    | "En cours de traitement"
-    | "Traitée";
-  date: string;
-}
+import { useApiData } from "../hooks/useApiData";
+import { ticketService } from "../services/tickets/ticketService";
+import type { Ticket } from "../types/api.types";
+
+/**
+ * Mapper les statuts backend vers les statuts d'affichage frontend
+ */
+const mapStatusToDisplay = (status: Ticket["statut"]): string => {
+  const statusMap: Record<Ticket["statut"], string> = {
+    en_attente: "En attente",
+    en_cours_etude: "En cours d'étude",
+    rejete: "Rejetée",
+    accepte: "Acceptée",
+    assigne: "Assignée",
+    en_cours_traitement: "En cours de traitement",
+    traite: "Traitée",
+  };
+  return statusMap[status] || status;
+};
+
+/**
+ * Mapper les types backend vers les types d'affichage frontend
+ */
+const mapTypeToDisplay = (type: Ticket["type_ticket"]): string => {
+  const typeMap: Record<Ticket["type_ticket"], string> = {
+    facturation: "Facturation",
+    réclamation: "Réclamation",
+    technique: "Technique",
+    suggestion: "Suggestion",
+    autre: "Autre",
+  };
+  return typeMap[type] || type;
+};
 
 // --- Filtres types ---
-type FilterType = "all" | Ticket["type"];
-type StatusFilterType = "all" | Ticket["status"];
+type FilterType = "all" | Ticket["type_ticket"];
+type StatusFilterType = "all" | Ticket["statut"];
 
 export default function TicketsClient() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [search, setSearch] = useState<string>("");
   const [filter, setFilter] = useState<FilterType>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>("all");
-  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null); // ID sélectionné
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Mock data
-    setTickets([
-      {
-        id: 1,
-        title: "Problème de connexion à la plateforme",
-        type: "technique",
-        status: "En cours d'étude",
-        date: "2025-11-10",
-      },
-      {
-        id: 2,
-        title: "Erreur sur la facture",
-        type: "facturation",
-        status: "En cours de traitement",
-        date: "2025-11-08",
-      },
-      {
-        id: 3,
-        title: "Suggestion d'amélioration",
-        type: "suggestion",
-        status: "Acceptée",
-        date: "2025-11-05",
-      },
-    ]);
-  }, []);
+  // Récupérer les tickets depuis l'API
+  const {
+    data: ticketsData,
+    loading,
+    error,
+    refetch,
+  } = useApiData(
+    () => ticketService.listTickets({ page: 1, limit: 100 }),
+    { errorMessage: "Erreur lors du chargement des tickets" }
+  );
 
-  const filteredTickets = tickets.filter((t: Ticket) => {
-    const matchSearch = t.title.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "all" ? true : t.type === filter;
-    const matchStatus =
-      statusFilter === "all" ? true : t.status === statusFilter;
-    return matchSearch && matchFilter && matchStatus;
-  });
+  const tickets = ticketsData?.items || [];
+
+  // Filtrer les tickets
+  const filteredTickets = useMemo(() => {
+    return tickets.filter((ticket: Ticket) => {
+      const matchSearch = ticket.titre.toLowerCase().includes(search.toLowerCase());
+      const matchFilter = filter === "all" ? true : ticket.type_ticket === filter;
+      const matchStatus =
+        statusFilter === "all" ? true : ticket.statut === statusFilter;
+      return matchSearch && matchFilter && matchStatus;
+    });
+  }, [tickets, search, filter, statusFilter]);
+
+  // Récupérer le ticket sélectionné
+  const selectedTicket = useMemo(() => {
+    if (!selectedTicketId) return null;
+    return tickets.find((t) => t.id === selectedTicketId) || null;
+  }, [tickets, selectedTicketId]);
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-4 lg:mx-auto bg-slate-100 mt-4 rounded-xl">
-
       <div className="flex flex-wrap gap-4 justify-between mb-4">
         <h1 className="text-3xl font-bold text-blue-800">Mes Demandes</h1>
         <ButtonTicket
@@ -78,6 +90,27 @@ export default function TicketsClient() {
           hoverBgColor="hover:bg-blue-700"
         />
       </div>
+
+      {/* Affichage des erreurs */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-800">{error}</p>
+          <Button
+            onClick={() => refetch()}
+            className="mt-2 bg-red-600 hover:bg-red-700 text-white"
+          >
+            Réessayer
+          </Button>
+        </div>
+      )}
+
+      {/* Indicateur de chargement */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-800" />
+          <span className="ml-2 text-gray-600">Chargement des tickets...</span>
+        </div>
+      )}
 
       {/* Barre de recherche + filtres */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -103,7 +136,7 @@ export default function TicketsClient() {
           >
             <option value="all">Tous les types</option>
             <option value="facturation">Facturation</option>
-            <option value="reclamation">Réclamation</option>
+            <option value="réclamation">Réclamation</option>
             <option value="technique">Technique</option>
             <option value="suggestion">Suggestion</option>
             <option value="autre">Autre</option>
@@ -119,77 +152,91 @@ export default function TicketsClient() {
             className="w-full outline-none bg-transparent"
           >
             <option value="all">Tous les statuts</option>
-            <option value="En cours d'étude">En cours d'étude</option>
-            <option value="En cours de traitement">En cours de traitement</option>
-            <option value="Assignée">Assignée</option>
-            <option value="Acceptée">Acceptée</option>
-            <option value="Traitée">Traitée</option>
-            <option value="Rejetée">Rejetée</option>
+            <option value="en_attente">En attente</option>
+            <option value="en_cours_etude">En cours d'étude</option>
+            <option value="en_cours_traitement">En cours de traitement</option>
+            <option value="assigne">Assignée</option>
+            <option value="accepte">Acceptée</option>
+            <option value="traite">Traitée</option>
+            <option value="rejete">Rejetée</option>
           </select>
         </div>
       </div>
 
       {/* Liste des tickets */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTickets.map((ticket: Ticket) => (
-          <Card
-            key={ticket.id}
-            className="shadow-md rounded-2xl hover:shadow-xl transition bg-white border border-gray-100"
-          >
-            <CardContent className="p-5">
-              <h2
-                className="text-xl font-semibold text-blue-900 mb-1 line-clamp-1"
-                title={ticket.title}
+      {!loading && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTickets.map((ticket: Ticket) => (
+              <Card
+                key={ticket.id}
+                className="shadow-md rounded-2xl hover:shadow-xl transition bg-white border border-gray-100"
               >
-                {ticket.title}
-              </h2>
+                <CardContent className="p-5">
+                  <h2
+                    className="text-xl font-semibold text-blue-900 mb-1 line-clamp-1"
+                    title={ticket.titre}
+                  >
+                    {ticket.titre}
+                  </h2>
 
-              <p className="text-sm text-gray-700">
-                <span className="font-semibold">Type :</span> {ticket.type}
-              </p>
+                  <p className="text-sm text-gray-700">
+                    <span className="font-semibold">Type :</span>{" "}
+                    {mapTypeToDisplay(ticket.type_ticket)}
+                  </p>
 
-              <p className="text-sm mt-2">
-                <span className="font-semibold">Statut : </span>
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${TicketStatusColor[ticket.status]}`}
-                >
-                  {ticket.status}
-                </span>
-              </p>
+                  <p className="text-sm mt-2">
+                    <span className="font-semibold">Statut : </span>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        TicketStatusColor[mapStatusToDisplay(ticket.statut)] ||
+                        "bg-gray-200 text-gray-800"
+                      }`}
+                    >
+                      {mapStatusToDisplay(ticket.statut)}
+                    </span>
+                  </p>
 
-              <p className="text-sm text-gray-600 mt-2">
-                <span className="font-semibold">Date :</span> {ticket.date}
-              </p>
+                  <p className="text-sm text-gray-600 mt-2">
+                    <span className="font-semibold">Date :</span>{" "}
+                    {new Date(ticket.date_creation).toLocaleDateString("fr-FR")}
+                  </p>
 
-              {/* BOUTON VOIR LE TICKET */}
-              <Button
-                className="w-full bg-blue-800 text-white rounded-xl mt-4 py-2 hover:bg-blue-700"
-                onClick={() => setSelectedTicketId(ticket.id)}
-              >
-                Voir le ticket
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  {/* BOUTON VOIR LE TICKET */}
+                  <Button
+                    className="w-full bg-blue-800 text-white rounded-xl mt-4 py-2 hover:bg-blue-700"
+                    onClick={() => setSelectedTicketId(ticket.id)}
+                  >
+                    Voir le ticket
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-      {filteredTickets.length === 0 && (
-        <p className="text-center text-gray-500 mt-10">Aucun ticket trouvé.</p>
+          {filteredTickets.length === 0 && !error && (
+            <p className="text-center text-gray-500 mt-10">
+              {tickets.length === 0
+                ? "Aucun ticket pour le moment."
+                : "Aucun ticket ne correspond à vos filtres."}
+            </p>
+          )}
+        </>
       )}
 
       {/* === MODAL TICKET === */}
-      {selectedTicketId && (
+      {selectedTicket && (
         <DetailsTicket
-          isOpen={true} // maintenant on fournit isOpen
+          isOpen={true}
           onClose={() => setSelectedTicketId(null)}
           ticket={{
-            id: tickets.find((t) => t.id === selectedTicketId)?.id.toString() || "",
-            titre: tickets.find((t) => t.id === selectedTicketId)?.title || "",
-            description: "Description non disponible", // mock si pas dispo
-            type: tickets.find((t) => t.id === selectedTicketId)?.type || "",
-            statut: tickets.find((t) => t.id === selectedTicketId)?.status || "",
-            notes: [], // mock vide
-            dateCreation: tickets.find((t) => t.id === selectedTicketId)?.date || "",
+            id: selectedTicket.id,
+            titre: selectedTicket.titre,
+            description: selectedTicket.description || "Aucune description",
+            type: mapTypeToDisplay(selectedTicket.type_ticket),
+            statut: mapStatusToDisplay(selectedTicket.statut),
+            notes: selectedTicket.notes || [],
+            dateCreation: selectedTicket.date_creation,
           }}
         />
       )}

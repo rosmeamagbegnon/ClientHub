@@ -1,13 +1,13 @@
 /**
  * Service de gestion des tickets
- * 
+ *
  * PROBLÈME RÉSOLU :
  * Avant : Les pages tickets utilisaient des données mockées
  * Pourquoi c'était mauvais :
  * - Pas de vraies données depuis l'API
  * - Impossible de créer/modifier des tickets
  * - Pas de synchronisation avec le backend
- * 
+ *
  * SOLUTION :
  * Service centralisé qui :
  * - Encapsule tous les appels API liés aux tickets
@@ -18,14 +18,15 @@
 import { apiClient } from "../api/apiClient";
 import { API_ENDPOINTS } from "../../config/api.config";
 import { logger } from "../../utils/logger";
-import {
-  Ticket,
-  CreateTicketData,
-  UpdateTicketStatusData,
+import type {
   AddTicketNoteData,
-  TicketNote,
+  CreateTicketData,
   PaginatedResponse,
-} from "../../types/api.types";
+  Pagination,
+  Ticket,
+  TicketNote,
+  UpdateTicketStatusData,
+} from "@/types/api.types";
 
 /**
  * Options pour lister les tickets
@@ -44,14 +45,19 @@ export interface ListTicketsOptions {
 class TicketService {
   /**
    * Créer un nouveau ticket
-   * 
+   *
    * @param data - Données du ticket à créer
    * @returns Ticket créé
    */
   async createTicket(data: CreateTicketData): Promise<Ticket> {
     try {
-      logger.info("Création d'un ticket", { entreprise_id: data.entreprise_id });
-      const ticket = await apiClient.post<Ticket>(API_ENDPOINTS.TICKETS.BASE, data);
+      logger.info("Création d'un ticket", {
+        entreprise_id: data.entreprise_id,
+      });
+      const ticket = await apiClient.post<Ticket>(
+        API_ENDPOINTS.TICKETS.BASE,
+        data
+      );
       logger.info("Ticket créé avec succès", { ticket_id: ticket.id });
       return ticket;
     } catch (error) {
@@ -62,11 +68,13 @@ class TicketService {
 
   /**
    * Lister les tickets avec filtres et pagination
-   * 
+   *
    * @param options - Options de filtrage et pagination
    * @returns Liste paginée des tickets
    */
-  async listTickets(options: ListTicketsOptions = {}): Promise<PaginatedResponse<Ticket>> {
+  async listTickets(
+    options: ListTicketsOptions = {}
+  ): Promise<PaginatedResponse<Ticket>> {
     try {
       // Construire les paramètres de requête
       const params = new URLSearchParams();
@@ -74,7 +82,8 @@ class TicketService {
       if (options.limit) params.append("limit", options.limit.toString());
       if (options.statut) params.append("statut", options.statut);
       if (options.priorite) params.append("priorite", options.priorite);
-      if (options.type_ticket) params.append("type_ticket", options.type_ticket);
+      if (options.type_ticket)
+        params.append("type_ticket", options.type_ticket);
 
       const queryString = params.toString();
       const endpoint = queryString
@@ -82,9 +91,22 @@ class TicketService {
         : API_ENDPOINTS.TICKETS.BASE;
 
       logger.debug("Récupération de la liste des tickets", options);
-      const response = await apiClient.get<PaginatedResponse<Ticket>>(endpoint);
-      logger.debug("Tickets récupérés", { count: response.items.length });
-      return response;
+      const response = await apiClient.get<{
+        success: boolean;
+        tickets: Ticket[];
+        pagination: Pagination;
+      }>(endpoint);
+
+      // Adapter la structure de réponse backend vers le format attendu
+      const adaptedResponse: PaginatedResponse<Ticket> = {
+        items: response.tickets || [],
+        pagination: response.pagination,
+      };
+
+      logger.debug("Tickets récupérés", {
+        count: adaptedResponse.items.length,
+      });
+      return adaptedResponse;
     } catch (error) {
       logger.error("Erreur lors de la récupération des tickets", error);
       throw error;
@@ -93,14 +115,16 @@ class TicketService {
 
   /**
    * Récupérer un ticket par son ID
-   * 
+   *
    * @param id - ID du ticket
    * @returns Ticket avec ses notes
    */
   async getTicket(id: string): Promise<Ticket> {
     try {
       logger.debug("Récupération du ticket", { ticket_id: id });
-      const ticket = await apiClient.get<Ticket>(API_ENDPOINTS.TICKETS.BY_ID(id));
+      const ticket = await apiClient.get<Ticket>(
+        API_ENDPOINTS.TICKETS.BY_ID(id)
+      );
       logger.debug("Ticket récupéré", { ticket_id: ticket.id });
       return ticket;
     } catch (error) {
@@ -111,14 +135,20 @@ class TicketService {
 
   /**
    * Mettre à jour le statut d'un ticket
-   * 
+   *
    * @param id - ID du ticket
    * @param data - Nouveau statut
    * @returns Ticket mis à jour
    */
-  async updateTicketStatus(id: string, data: UpdateTicketStatusData): Promise<Ticket> {
+  async updateTicketStatus(
+    id: string,
+    data: UpdateTicketStatusData
+  ): Promise<Ticket> {
     try {
-      logger.info("Mise à jour du statut du ticket", { ticket_id: id, statut: data.statut });
+      logger.info("Mise à jour du statut du ticket", {
+        ticket_id: id,
+        statut: data.statut,
+      });
       const ticket = await apiClient.patch<Ticket>(
         API_ENDPOINTS.TICKETS.STATUS(id),
         data
@@ -133,7 +163,7 @@ class TicketService {
 
   /**
    * Ajouter une note à un ticket
-   * 
+   *
    * @param id - ID du ticket
    * @param data - Contenu de la note
    * @returns Note créée
@@ -155,7 +185,7 @@ class TicketService {
 
   /**
    * Récupérer les notes d'un ticket
-   * 
+   *
    * @param id - ID du ticket
    * @returns Liste des notes
    */
@@ -176,4 +206,3 @@ class TicketService {
 
 // Export d'une instance singleton
 export const ticketService = new TicketService();
-

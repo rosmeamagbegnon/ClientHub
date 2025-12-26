@@ -1,5 +1,5 @@
 // src/pages/TicketsEntreprise.tsx
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,8 +10,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Eye } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
 import TicketStatusColor from "../config/ticketStatusColor";
+import { useApiData, useApiMutation } from "../hooks/useApiData";
+import { ticketService } from "../services/tickets/ticketService";
+import type { Ticket } from "../types/api.types";
+import { logger } from "../utils/logger";
 
 import {
   DndContext,
@@ -31,23 +35,85 @@ import { CSS } from "@dnd-kit/utilities";
 import { CardTitle } from "@/components/ui/card";
 
 // ===== TYPES =====
-interface Ticket {
-  id: number;
+/**
+ * Interface locale pour l'affichage dans le Kanban
+ */
+interface TicketDisplay {
+  id: string;
   title: string;
   client: string;
   type: string;
-  status:
-    | "En cours d'étude"
-    | "Rejetée"
-    | "Acceptée"
-    | "Assignée"
-    | "En cours de traitement"
-    | "Traitée";
+  status: string;
   dueDate: string;
-  notes: string[];
+  notes: Array<{ id?: string; contenu?: string; date_creation?: string } | string>;
 }
 
-const STATUSES: Ticket["status"][] = [
+/**
+ * Mapper les statuts backend vers les statuts d'affichage frontend
+ */
+const mapStatusToDisplay = (status: Ticket["statut"]): string => {
+  const statusMap: Record<Ticket["statut"], string> = {
+    en_attente: "En attente",
+    en_cours_etude: "En cours d'étude",
+    rejete: "Rejetée",
+    accepte: "Acceptée",
+    assigne: "Assignée",
+    en_cours_traitement: "En cours de traitement",
+    traite: "Traitée",
+  };
+  return statusMap[status] || status;
+};
+
+/**
+ * Mapper les statuts d'affichage frontend vers les statuts backend
+ */
+const mapStatusToBackend = (status: string): Ticket["statut"] | null => {
+  const statusMap: Record<string, Ticket["statut"]> = {
+    "En attente": "en_attente",
+    "En cours d'étude": "en_cours_etude",
+    "Rejetée": "rejete",
+    "Acceptée": "accepte",
+    "Assignée": "assigne",
+    "En cours de traitement": "en_cours_traitement",
+    "Traitée": "traite",
+  };
+  return statusMap[status] || null;
+};
+
+/**
+ * Mapper les types backend vers les types d'affichage frontend
+ */
+const mapTypeToDisplay = (type: Ticket["type_ticket"]): string => {
+  const typeMap: Record<Ticket["type_ticket"], string> = {
+    facturation: "Facturation",
+    réclamation: "Réclamation",
+    technique: "Technique",
+    suggestion: "Suggestion",
+    autre: "Autre",
+  };
+  return typeMap[type] || type;
+};
+
+/**
+ * Convertir un Ticket API en TicketDisplay pour l'affichage
+ */
+const convertTicketToDisplay = (ticket: Ticket): TicketDisplay => {
+  // Formater le nom du client (on utilisera client_id pour l'instant, à améliorer avec un join)
+  const clientName = `Client ${ticket.client_id.substring(0, 8)}...`;
+  
+  return {
+    id: ticket.id,
+    title: ticket.titre,
+    client: clientName,
+    type: mapTypeToDisplay(ticket.type_ticket),
+    status: mapStatusToDisplay(ticket.statut),
+    dueDate: ticket.date_creation ? new Date(ticket.date_creation).toLocaleDateString("fr-FR") : "N/A",
+    notes: ticket.notes || [],
+  };
+};
+
+const STATUSES_DISPLAY: string[] = [
+  "En attente",
   "En cours d'étude",
   "Assignée",
   "En cours de traitement",
@@ -61,7 +127,7 @@ function DraggableTicket({
   ticket,
   onView,
 }: {
-  ticket: Ticket;
+  ticket: TicketDisplay;
   onView: () => void;
 }) {
   const {
@@ -124,9 +190,9 @@ function KanbanColumn({
   tickets,
   onView,
 }: {
-  status: Ticket["status"];
-  tickets: Ticket[];
-  onView: (ticket: Ticket) => void;
+  status: string;
+  tickets: TicketDisplay[];
+  onView: (ticket: TicketDisplay) => void;
 }) {
   const { setNodeRef } = useDroppable({
     id: status,
@@ -170,136 +236,194 @@ function KanbanColumn({
 
 // ===== MAIN COMPONENT =====
 const TicketsEntreprise = () => {
-  const [ticketsData, setTicketsData] = useState<Ticket[]>([
-    {
-      id: 1,
-      title: "Problème de connexion",
-      client: "Société Alpha",
-      type: "technique",
-      status: "En cours d'étude",
-      dueDate: "2025-02-20",
-      notes: ["Ticket ouvert par le client."],
-    },
-    {
-      id: 2,
-      title: "Erreur de facturation",
-      client: "Particulier – Marc D.",
-      type: "facturation",
-      status: "Assignée",
-      dueDate: "2025-02-18",
-      notes: [],
-    },
-    {
-      id: 3,
-      title: "Suggestion d'amélioration",
-      client: "Entreprise Koffi SARL",
-      type: "suggestion",
-      status: "Traitée",
-      dueDate: "2025-02-15",
-      notes: ["Suggestion acceptée et mise en place."],
-    },
-  ]);
-
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("");
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<TicketDisplay | null>(null);
+  const [selectedTicketApi, setSelectedTicketApi] = useState<Ticket | null>(null);
   const [newNote, setNewNote] = useState("");
 
-  // ===== FILTERS =====
-  const filtered = ticketsData.filter(
-    (t) =>
-      t.title.toLowerCase().includes(search.toLowerCase()) &&
-      (typeFilter ? t.type === typeFilter : true) &&
-      (statusFilter ? t.status === statusFilter : true) &&
-      (clientFilter
-        ? t.client.toLowerCase().includes(clientFilter.toLowerCase())
-        : true)
+  // Récupérer les tickets depuis l'API
+  const {
+    data: ticketsDataResponse,
+    loading,
+    error,
+    refetch,
+  } = useApiData(
+    () => ticketService.listTickets({ page: 1, limit: 100 }),
+    { errorMessage: "Erreur lors du chargement des tickets" }
   );
+
+  // Hook pour la mise à jour du statut
+  const {
+    mutate: updateStatus,
+    loading: updatingStatus,
+  } = useApiMutation(
+    ({ ticketId, newStatus }: { ticketId: string; newStatus: Ticket["statut"] }) =>
+      ticketService.updateTicketStatus(ticketId, { statut: newStatus })
+  );
+
+  // Hook pour l'ajout de note
+  const {
+    mutate: addNoteMutation,
+    loading: addingNote,
+  } = useApiMutation(
+    ({ ticketId, contenu }: { ticketId: string; contenu: string }) =>
+      ticketService.addNote(ticketId, { contenu, est_publique: true })
+  );
+
+  // Convertir les tickets API en tickets d'affichage
+  const ticketsData = useMemo(() => {
+    if (!ticketsDataResponse?.items) return [];
+    return ticketsDataResponse.items.map(convertTicketToDisplay);
+  }, [ticketsDataResponse]);
+
+  // ===== FILTERS =====
+  const filtered = useMemo(() => {
+    return ticketsData.filter(
+      (t) =>
+        t.title.toLowerCase().includes(search.toLowerCase()) &&
+        (typeFilter && typeFilter !== "all" ? t.type.toLowerCase() === typeFilter.toLowerCase() : true) &&
+        (statusFilter && statusFilter !== "all" ? t.status === statusFilter : true) &&
+        (clientFilter
+          ? t.client.toLowerCase().includes(clientFilter.toLowerCase())
+          : true)
+    );
+  }, [ticketsData, search, typeFilter, statusFilter, clientFilter]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  const ticketsByStatus: Record<Ticket["status"], Ticket[]> = {
-    "En cours d'étude": [],
-    Assignée: [],
-    "En cours de traitement": [],
-    Acceptée: [],
-    Traitée: [],
-    Rejetée: [],
-  };
-
-  STATUSES.forEach((status) => {
-    ticketsByStatus[status] = filtered.filter((t) => t.status === status);
-  });
+  const ticketsByStatus: Record<string, TicketDisplay[]> = useMemo(() => {
+    const grouped: Record<string, TicketDisplay[]> = {};
+    STATUSES_DISPLAY.forEach((status) => {
+      grouped[status] = [];
+    });
+    filtered.forEach((ticket) => {
+      if (grouped[ticket.status]) {
+        grouped[ticket.status].push(ticket);
+      }
+    });
+    return grouped;
+  }, [filtered]);
 
   // ===== DRAG END =====
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
 
-    const activeId = Number(active.id);
+    const activeId = active.id.toString();
     const activeTicket = ticketsData.find((t) => t.id === activeId);
     if (!activeTicket) return;
 
     const overId = over.id.toString();
-    const overTicket = ticketsData.find(
-      (t) => t.id.toString() === overId
+    // Si on drop sur une colonne (status), overId sera le statut
+    // Si on drop sur un autre ticket, on récupère le statut de ce ticket
+    const overTicket = ticketsData.find((t) => t.id === overId);
+    const newStatusDisplay = overTicket?.status ?? overId;
+
+    // Convertir le statut d'affichage en statut backend
+    const newStatusBackend = mapStatusToBackend(newStatusDisplay);
+    if (!newStatusBackend) {
+      logger.warn("Statut invalide lors du drag & drop", { newStatusDisplay });
+      return;
+    }
+
+    // Mise à jour optimiste de l'UI
+    const updatedTickets = ticketsData.map((t) =>
+      t.id === activeId ? { ...t, status: newStatusDisplay } : t
     );
 
-    const newStatus: Ticket["status"] =
-      overTicket?.status ?? (overId as Ticket["status"]);
-
-    if (!newStatus) return;
-
-    setTicketsData((prev) =>
-      prev.map((t) =>
-        t.id === activeId ? { ...t, status: newStatus } : t
-      )
-    );
-
-    if (selectedTicket?.id === activeId) {
-      setSelectedTicket({ ...selectedTicket, status: newStatus });
+    // Mettre à jour via l'API
+    try {
+      await updateStatus({ ticketId: activeId, newStatus: newStatusBackend });
+      // Recharger les tickets pour avoir les données à jour
+      await refetch();
+      logger.info("Statut du ticket mis à jour avec succès", { ticketId: activeId, newStatus: newStatusBackend });
+    } catch (error) {
+      logger.error("Erreur lors de la mise à jour du statut", error);
+      // En cas d'erreur, recharger pour restaurer l'état
+      await refetch();
     }
   };
 
   // ===== STATUS UPDATE =====
-  const updateTicketStatus = (id: number, newStatus: Ticket["status"]) => {
-    setTicketsData((prev) =>
-      prev.map((ticket) =>
-        ticket.id === id ? { ...ticket, status: newStatus } : ticket
-      )
-    );
+  const updateTicketStatus = async (id: string, newStatusDisplay: string) => {
+    const newStatusBackend = mapStatusToBackend(newStatusDisplay);
+    if (!newStatusBackend) {
+      logger.warn("Statut invalide", { newStatusDisplay });
+      return;
+    }
 
-    if (selectedTicket?.id === id) {
-      setSelectedTicket({ ...selectedTicket, status: newStatus });
+    try {
+      await updateStatus({ ticketId: id, newStatus: newStatusBackend });
+      // Recharger les tickets
+      await refetch();
+      logger.info("Statut du ticket mis à jour", { ticketId: id, newStatus: newStatusBackend });
+    } catch (error) {
+      logger.error("Erreur lors de la mise à jour du statut", error);
     }
   };
 
   // ===== ADD NOTE =====
-  const addNote = () => {
-    if (!selectedTicket || !newNote.trim()) return;
+  const addNote = async () => {
+    if (!selectedTicketApi || !newNote.trim()) return;
 
-    setTicketsData((prev) =>
-      prev.map((t) =>
-        t.id === selectedTicket.id
-          ? { ...t, notes: [...t.notes, newNote.trim()] }
-          : t
-      )
-    );
+    try {
+      await addNoteMutation({
+        ticketId: selectedTicketApi.id,
+        contenu: newNote.trim(),
+      });
+      // Recharger le ticket pour avoir les notes à jour
+      const updatedTicket = await ticketService.getTicket(selectedTicketApi.id);
+      setSelectedTicketApi(updatedTicket);
+      setSelectedTicket(convertTicketToDisplay(updatedTicket));
+      setNewNote("");
+      logger.info("Note ajoutée avec succès", { ticketId: selectedTicketApi.id });
+    } catch (error) {
+      logger.error("Erreur lors de l'ajout de la note", error);
+    }
+  };
 
-    setSelectedTicket({
-      ...selectedTicket,
-      notes: [...selectedTicket.notes, newNote.trim()],
-    });
-    setNewNote("");
+  // ===== VIEW TICKET =====
+  const handleViewTicket = async (ticket: TicketDisplay) => {
+    setSelectedTicket(ticket);
+    try {
+      // Charger les détails complets du ticket depuis l'API
+      const fullTicket = await ticketService.getTicket(ticket.id);
+      setSelectedTicketApi(fullTicket);
+      setSelectedTicket(convertTicketToDisplay(fullTicket));
+    } catch (error) {
+      logger.error("Erreur lors du chargement du ticket", error);
+    }
   };
 
   return (
     <div className="bg-slate-100 p-6 absolute left-[15%] -z-50 w-[85%] h-full">
       <CardTitle className="text-3xl font-bold text-blue-800 mb-6">Liste des Tickets</CardTitle>
+
+      {/* Affichage des erreurs */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-800">{error}</p>
+          <Button
+            onClick={() => refetch()}
+            className="mt-2 bg-red-600 hover:bg-red-700 text-white"
+          >
+            Réessayer
+          </Button>
+        </div>
+      )}
+
+      {/* Indicateur de chargement */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-800" />
+          <span className="ml-2 text-gray-600">Chargement des tickets...</span>
+        </div>
+      )}
 
       {/* FILTERS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-white p-5 rounded-xl shadow-sm border">
@@ -314,6 +438,7 @@ const TicketsEntreprise = () => {
             <SelectValue placeholder="Type de ticket" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">Tous les types</SelectItem>
             <SelectItem value="facturation">Facturation</SelectItem>
             <SelectItem value="réclamation">Réclamation</SelectItem>
             <SelectItem value="technique">Technique</SelectItem>
@@ -327,7 +452,8 @@ const TicketsEntreprise = () => {
             <SelectValue placeholder="Statut" />
           </SelectTrigger>
           <SelectContent>
-            {STATUSES.map((s) => (
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            {STATUSES_DISPLAY.map((s) => (
               <SelectItem key={s} value={s}>
                 {s}
               </SelectItem>
@@ -343,22 +469,32 @@ const TicketsEntreprise = () => {
       </div>
 
       {/* KANBAN */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {STATUSES.map((status) => (
-            <KanbanColumn
-              key={status}
-              status={status}
-              tickets={ticketsByStatus[status]}
-              onView={(t) => setSelectedTicket(t)}
-            />
-          ))}
+      {!loading && (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {STATUSES_DISPLAY.map((status) => (
+              <KanbanColumn
+                key={status}
+                status={status}
+                tickets={ticketsByStatus[status] || []}
+                onView={handleViewTicket}
+              />
+            ))}
+          </div>
+        </DndContext>
+      )}
+
+      {!loading && filtered.length === 0 && (
+        <div className="text-center py-12 text-gray-500">
+          {ticketsData.length === 0
+            ? "Aucun ticket pour le moment."
+            : "Aucun ticket ne correspond à vos filtres."}
         </div>
-      </DndContext>
+      )}
 
       {/* MODAL */}
       {selectedTicket && (
@@ -397,18 +533,14 @@ const TicketsEntreprise = () => {
             </p>
 
             <Select
-              onValueChange={(v) =>
-                updateTicketStatus(
-                  selectedTicket.id,
-                  v as Ticket["status"]
-                )
-              }
+              onValueChange={(v) => updateTicketStatus(selectedTicket.id, v)}
+              value={selectedTicket.status}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Changer le statut" />
               </SelectTrigger>
               <SelectContent>
-                {STATUSES.map((s) => (
+                {STATUSES_DISPLAY.map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
                   </SelectItem>
@@ -431,14 +563,25 @@ const TicketsEntreprise = () => {
                   </p>
                 )}
 
-                {selectedTicket.notes.map((note, i) => (
-                  <div
-                    key={i}
-                    className="text-sm bg-white p-2 rounded-md border"
-                  >
-                    {note}
-                  </div>
-                ))}
+                {selectedTicket.notes.map((note, i) => {
+                  const noteContent =
+                    typeof note === "string" ? note : note.contenu || "Note sans contenu";
+                  const noteDate =
+                    typeof note === "object" && note.date_creation
+                      ? new Date(note.date_creation).toLocaleDateString("fr-FR")
+                      : "";
+                  return (
+                    <div
+                      key={typeof note === "object" && note.id ? note.id : i}
+                      className="text-sm bg-white p-2 rounded-md border mb-2"
+                    >
+                      <p>{noteContent}</p>
+                      {noteDate && (
+                        <p className="text-xs text-gray-500 mt-1">{noteDate}</p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="flex gap-2">
@@ -450,8 +593,16 @@ const TicketsEntreprise = () => {
                 <Button
                   onClick={addNote}
                   className="bg-blue-800 text-white"
+                  disabled={addingNote || !newNote.trim()}
                 >
-                  Ajouter
+                  {addingNote ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Ajout...
+                    </>
+                  ) : (
+                    "Ajouter"
+                  )}
                 </Button>
               </div>
             </div>

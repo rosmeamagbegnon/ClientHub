@@ -12,7 +12,7 @@ interface DetailsTicketProps {
     description: string;
     type: string;
     statut: string;
-    notes: string[];
+    notes: Array<{ id?: string; contenu?: string; date_creation?: string } | string>;
     dateCreation: string;
   } | null;
 }
@@ -80,11 +80,25 @@ function DetailsTicket({ isOpen, onClose, ticket }: DetailsTicketProps) {
                 <p className="text-sm text-gray-500">Notes de l'entreprise</p>
                 <div className="bg-gray-100 rounded-md p-3 space-y-2 max-h-40 overflow-auto">
                   {ticket.notes.length > 0 ? (
-                    ticket.notes.map((n, index) => (
-                      <p key={index} className="text-gray-700 text-sm border-b pb-1 last:border-none">
-                        • {n}
-                      </p>
-                    ))
+                    ticket.notes.map((n, index) => {
+                      const noteContent =
+                        typeof n === "string" ? n : n.contenu || "Note sans contenu";
+                      const noteDate =
+                        typeof n === "object" && n.date_creation
+                          ? new Date(n.date_creation).toLocaleDateString("fr-FR")
+                          : "";
+                      return (
+                        <div
+                          key={typeof n === "object" && n.id ? n.id : index}
+                          className="text-gray-700 text-sm border-b pb-2 mb-2 last:border-none"
+                        >
+                          <p>• {noteContent}</p>
+                          {noteDate && (
+                            <p className="text-xs text-gray-500 mt-1">{noteDate}</p>
+                          )}
+                        </div>
+                      );
+                    })
                   ) : (
                     <p className="text-gray-500 text-sm">Aucune note disponible</p>
                   )}

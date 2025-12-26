@@ -1,6 +1,6 @@
 /**
  * Configuration centralisée de l'API
- * 
+ *
  * PROBLÈME RÉSOLU :
  * Avant : Les URLs API étaient hardcodées dans chaque composant (ex: "http://localhost:3000/api/...")
  * Pourquoi c'était mauvais :
@@ -8,7 +8,7 @@
  * - Duplication de code
  * - Risque d'erreurs de frappe
  * - Difficile à maintenir
- * 
+ *
  * SOLUTION :
  * Configuration centralisée avec variables d'environnement
  * - Un seul endroit pour changer l'URL
@@ -27,22 +27,22 @@ export const API_CONFIG = {
    * En production : définir VITE_API_URL dans .env
    */
   BASE_URL: import.meta.env.VITE_API_URL || "http://localhost:3000",
-  
+
   /**
    * Préfixe de toutes les routes API
    */
   API_PREFIX: "/api",
-  
+
   /**
    * Timeout par défaut pour les requêtes (en millisecondes)
    */
   TIMEOUT: 30000, // 30 secondes
-  
+
   /**
    * Nom de la clé dans localStorage pour le token JWT
    */
   TOKEN_STORAGE_KEY: "ticketsmaster_token",
-  
+
   /**
    * Nom de la clé dans localStorage pour les données utilisateur
    */
@@ -51,9 +51,9 @@ export const API_CONFIG = {
 
 /**
  * Construit l'URL complète d'un endpoint API
- * 
+ *
  * @example
- * buildApiUrl("/auth/clients/login") 
+ * buildApiUrl("/auth/clients/login")
  * // => "http://localhost:3000/api/auth/clients/login"
  */
 export function buildApiUrl(endpoint: string): string {
@@ -112,5 +112,8 @@ export const API_ENDPOINTS = {
     SESSION_BY_ID: (id: string) => `/chatbot/sessions/${id}`,
     MESSAGES: (id: string) => `/chatbot/sessions/${id}/messages`,
   },
+  // Clients (pour les entreprises)
+  CLIENTS: {
+    BASE: "/dashboard/top-clients",
+  },
 } as const;
-

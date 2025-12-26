@@ -1,5 +1,6 @@
 // src/constants/statusColors.ts
 export const TicketStatusColors: Record<string, string> = {
+  "En attente": "bg-gray-200 text-gray-800",
   "En cours d'étude": "bg-yellow-200 text-yellow-800",
   "Rejetée": "bg-red-200 text-red-800",
   "Acceptée": "bg-green-200 text-green-800",
