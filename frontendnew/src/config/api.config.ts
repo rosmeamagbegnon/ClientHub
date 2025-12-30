@@ -116,4 +116,11 @@ export const API_ENDPOINTS = {
   CLIENTS: {
     BASE: "/dashboard/top-clients",
   },
+  // Opportunités (mappées depuis les commandes)
+  OPPORTUNITIES: {
+    BASE: "/commandes", // Mappé aux commandes
+    BY_ID: (id: string) => `/commandes/${id}`,
+    STATUS: (id: string) => `/commandes/${id}/status`, // Pour changer le statut
+    NOTES: (id: string) => `/commandes/${id}/notes`, // Pour ajouter des notes
+  },
 } as const;

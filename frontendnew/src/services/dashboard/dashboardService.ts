@@ -48,11 +48,14 @@ class DashboardService {
   async getDashboard(period: Period = "month"): Promise<DashboardData> {
     try {
       logger.debug("Récupération du dashboard complet", { period });
-      const dashboard = await apiClient.get<DashboardData>(
+      // Le backend retourne { success: true, ...data }
+      const response = await apiClient.get<{ success: boolean } & DashboardData>(
         `${API_ENDPOINTS.DASHBOARD.BASE}?period=${period}`
       );
+      // Extraire les données (sans success)
+      const { success, ...dashboard } = response;
       logger.debug("Dashboard récupéré", { period });
-      return dashboard;
+      return dashboard as DashboardData;
     } catch (error) {
       logger.error("Erreur lors de la récupération du dashboard", error);
       throw error;
